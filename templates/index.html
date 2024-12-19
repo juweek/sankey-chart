@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Nutrition Sankey Diagram</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="/static/css/styles.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container my-4">
+        <div class="row">
+            <div class="col-12">
+                <h1 class="text-center mb-4">Food Nutrition Breakdown</h1>
+                <div class="d-flex justify-content-center mb-4" id="foodControls">
+                    <button class="btn btn-secondary mx-2 active" data-food-id="170208">Raw Beef</button>
+                    <button class="btn btn-secondary mx-2" data-food-id="170386">Cooked Beef</button>
+                </div>
+                <div class="choropleth_graphic_area">
+                    <h4 id="sankeyDiagram_graphTitle" class="text-center mb-3"></h4>
+                    <p id="sankeyDiagram_graphSubhead" class="text-center mb-4"></p>
+                    <div id="sankeyTooltip"></div>
+                    <div id="sankeyDiagram_my_dataviz"></div>
+                    <div id="sankeyDiagram_graphSource" class="text-center mt-3">
+                        Source: <a href="https://fdc.nal.usda.gov/">USDA FoodData Database</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
+    <script src="/static/js/sankey.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+:root {
+    --main-font: 'Neucha', sans-serif;
+    --text-color: #333;
+    --main-color: #F7F3F1;
+    --background-light: #F7F3F1;
+    --border-dark: #333;
+    --shadow-color: #333;
+    --background-dark: #eae5e3;
+    --tooltip-bg: #fff;
+    --tooltip-border: #ccc;
+}
+
+.choropleth_graphic_area {
+    background-color: var(--background-dark);
+    padding: 20px;
+    position: relative;
+    border: 2px solid var(--shadow-color);
+    color: var(--text-color);
+    margin: 10px 0;
+    box-shadow: inset 0 0 3px #333;
+}
+
+#sankeyTooltip {
+    position: absolute;
+    background: var(--tooltip-bg);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: 2px 2px 0px #333;
+    padding: 10px;
+    border-radius: 1px;
+    font-size: 14px;
+    max-width: 180px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.link {
+    fill: none;
+    stroke: #666363;
+    stroke-opacity: 0.2;
+}
+
+.link:hover {
+    stroke-opacity: 0.5;
+}
+
+.loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2em;
+    color: var(--text-color);
+}
