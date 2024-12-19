@@ -1,0 +1,1221 @@
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Patrick+Hand+SC&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Neucha&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Averia+Gruesa+Libre&family=Averia+Libre:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Averia+Sans+Libre:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Averia+Serif+Libre:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap');
+
+    :root {
+        --main-font: 'Neucha', sans-serif;
+        --patrick-hand-font: 'Patrick Hand SC', sans-serif;
+        --averia-gruesa-libre-font: 'Averia Gruesa Libre', cursive;
+        --averia-libre-font: 'Averia Libre', cursive;
+        --averia-sans-libre-font: 'Averia Sans Libre', cursive;
+        --averia-serif-libre-font: 'Averia Serif Libre', cursive;
+        --highlight-color: #434040;
+        --text-color: #333;
+        /* Assuming you want to standardize this across all buttons */
+        --main-color: #F7F3F1;
+        --background-light: #F7F3F1;
+        --border-dark: #333;
+        --shadow-color: #333;
+        --background-dark: #eae5e3;
+        /* Assumed value, update if needed */
+        --tooltip-bg: #fff;
+        --tooltip-border: #ccc;
+
+        /* Energy Source Colors */
+        --fill-low-coal: #f0f9e8;
+        --fill-medium-coal: #bae4bc;
+        --fill-high-coal: #7bccc4;
+        --fill-very-high-coal: #2b8cbe;
+        --fill-low-natural-gas: #f9e7ee;
+        --fill-medium-natural-gas: #e5bdce;
+        --fill-high-natural-gas: #cc7b8b;
+        --fill-very-high-natural-gas: #bf2b49;
+        --fill-low-petroleum: #f9e6d7;
+        --fill-medium-petroleum: #dea384;
+        --fill-high-petroleum: #bb8d59;
+        --fill-very-high-petroleum: #b56515;
+        --fill-low-renewable: #eec7ea;
+        --fill-medium-renewable: #de84c5;
+        --fill-high-renewable: #b05386;
+        --fill-very-high-renewable: #ad1e65;
+        --fill-low-nuclear: #c7cdee;
+        --fill-medium-nuclear: #8496de;
+        --fill-high-nuclear: #5364b0;
+        --fill-very-high-nuclear: #1e36ad;
+    }
+
+    button {
+        margin-right: 4px;
+        margin-bottom: 6px;
+        font-size: 1.5em;
+        border-radius: 100px;
+        padding: 6px 10px;
+        background: transparent;
+        color: var(--text-color);
+        border: 1px solid var(--shadow-color);
+    }
+
+    button:hover,
+    button.active {
+        background-color: var(--highlight-color);
+        color: var(--main-color);
+        border: 1px solid var(--main-color);
+    }
+
+    select,
+    .barGraphSelect {
+        font-size: 1.2em;
+        padding: 4px;
+        margin: 0px;
+        border: 0px;
+        /* Adjusted for responsiveness */
+        color: var(--main-color);
+        background-color: #cfc6c3;
+        background-image: url("data:image/svg+xml;utf8,<svg fill='%23BLACK_OR_COLOR' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        background-size: 40px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+    }
+
+    .selectLabel {
+        display: block;
+        margin-bottom: 4px;
+        font-size: 0.8em;
+        text-align: left;
+    }
+
+    .choropleth_graphic_area {
+        background-color: var(--background-dark);
+        padding: 10px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        position: relative;
+        border: 2px solid var(--shadow-color);
+        color: var(--text-color);
+        margin-top: 10px;
+        margin-bottom: 10px;
+        box-shadow: inset 0 0 3px #333;
+        font-family: var(--averia-sans-libre-font);
+    }
+
+    .choropleth_graphic_area::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('https://images.squarespace-cdn.com/content/61e3e0fa2531e62193f7e651/3bcf44e0-cfee-4743-887d-4e95206bd12d/semi_transparent_tan.png?content-type=image%2Fpng') center center / cover no-repeat;
+        opacity: 0.2;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .gourmetMediaContainer {
+        border: 2px solid var(--shadow-color);
+        padding: 200px;
+        box-shadow: 5px 4px var(--border-dark);
+        background-color: var(--main-color);
+        color: var(--text-color);
+        position: relative;
+    }
+
+    #sankeyTooltip,
+    #barGraphTooltip,
+    #choropleth_tooltip,
+    #radialDiagramTooltip {
+        position: absolute;
+        background: var(--tooltip-bg);
+        border: 1px solid var(--tooltip-border);
+        box-shadow: 2px 3px var(--border-dark);
+        padding: 10px;
+        border-radius: 1px;
+        text-align: left;
+        font-size: 14px;
+        font-family: var(--patrick-hand-font), sans-serif;
+        max-width: 180px;
+        color: var(--text-color);
+        opacity: 0;
+        pointer-events: none;
+        box-shadow: 2px 2px 0px #333;
+        z-index: 10;
+    }
+
+    #sankeyDiagram_graphSource,
+    #graphSource,
+    #choropleth_graphSource,
+    #waterDiagramGraphSource {
+        display: block;
+        text-align: center;
+    }
+
+    .org_350 h2 {
+        font-family: var(--averia-sans-libre-font) !important;
+        margin-bottom: 0px;
+
+    }
+
+    .org_350,
+    .org_350 p {
+        font-family: var(--averia-gruesa-libre-font) !important;
+    }
+
+    .org_350 p {
+        font-size: 16px;
+        line-height: 24px;
+        margin: 0px;
+        margin-bottom: 20px;
+    }
+
+    .org_350 h2 {
+        font-weight: 900;
+        font-size: 3.6rem;
+        line-height: 4rem;
+        margin-bottom: 10px;
+        color: var(--text-color);
+    }
+
+    #categorySelect {
+        font-weight: 900;
+        font-size: 4rem;
+        line-height: 4rem;
+        margin-bottom: 10px;
+        color: var(--text-color);
+        font-family: var(--averia-sans-libre-font) !important;
+        max-width: 70%;
+    }
+
+    svg path {
+        transition: fill 0.15s ease-in;
+    }
+
+    svg path:hover,
+    .node rect:hover,
+    .barGroup:hover,
+    .svgStatePath:hover {
+        opacity: .5;
+    }
+
+    .svg-container svg {
+        max-width: 100%;
+    }
+
+    .link {
+        fill: none;
+        stroke: #666363;
+        stroke-opacity: .2;
+    }
+
+    .tick text {
+        font-family: var(--averia-sans-libre-font);
+        color: #000;
+        /* Larger blur for the last shadow to create the 'bleed' effect */
+        -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.2);
+        font-weight: 700;
+    }
+
+    #choroplethKeyHolder {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+    }
+
+    .choroplethKeyItem {
+        display: flex;
+        flex-direction: column;
+        padding-top: 8px;
+        text-align: center;
+        color: var(--text-color);
+    }
+
+    .keyBar {
+        height: 12px;
+        width: 80px;
+        border: 1px solid var(--text-color);
+    }
+
+    #waterDiagramGraphSubhead,
+    #waterDiagramGraphTitle {
+        text-align: center;
+        display: block;
+    }
+
+    a {
+        color: var(--text-color) !important;
+    }
+
+    .category1 path[data-coal="low"],
+    .Coal .low {
+        fill: var(--fill-low-coal);
+        background-color: var(--fill-low-coal);
+    }
+
+    .category1 path[data-coal="medium"],
+    .Coal .medium {
+        fill: var(--fill-medium-coal);
+        background-color: var(--fill-medium-coal);
+    }
+
+    .category1 path[data-coal="high"],
+    .Coal .high {
+        fill: var(--fill-high-coal);
+        background-color: var(--fill-high-coal);
+    }
+
+    .category1 path[data-coal="very-high"],
+    .Coal .very-high {
+        fill: var(--fill-very-high-coal);
+        background-color: var(--fill-very-high-coal);
+    }
+
+    /* Natural Gas categories */
+    .category2 path[data-natural-gas="low"] {
+        fill: var(--fill-low-natural-gas);
+        background-color: var(--fill-low-natural-gas);
+    }
+
+    .category2 path[data-natural-gas="medium"] {
+        fill: var(--fill-medium-natural-gas);
+        background-color: var(--fill-medium-natural-gas);
+
+    }
+
+    .category2 path[data-natural-gas="high"] {
+        fill: var(--fill-high-natural-gas);
+        background-color: var(--fill-high-natural-gas);
+
+    }
+
+    .category2 path[data-natural-gas="very-high"] {
+        fill: var(--fill-very-high-natural-gas);
+        background-color: var(--fill-very-high-natural-gas);
+
+    }
+
+    /* Petroleum categories */
+    .category3 path[data-petroleum="low"],
+    .Petroleum .low {
+        fill: var(--fill-low-petroleum);
+        background-color: var(--fill-low-petroleum);
+
+    }
+
+    .category3 path[data-petroleum="medium"],
+    .Petroleum .medium {
+        fill: var(--fill-medium-petroleum);
+        background-color: var(--fill-medium-petroleum);
+    }
+
+    .category3 path[data-petroleum="high"],
+    .Petroleum .high {
+        fill: var(--fill-high-petroleum);
+        background-color: var(--fill-high-petroleum);
+    }
+
+    .category3 path[data-petroleum="very-high"],
+    .Petroleum .very-high {
+        fill: var(--fill-very-high-petroleum);
+        background-color: var(--fill-very-high-petroleum);
+    }
+
+    /* Renewable categories */
+    .category4 path[data-renewable="low"],
+    .Renewable .low {
+        fill: var(--fill-low-renewable);
+        background-color: var(--fill-low-renewable);
+    }
+
+    .category4 path[data-renewable="medium"],
+    .Renewable .medium {
+        fill: var(--fill-medium-renewable);
+        background-color: var(--fill-medium-renewable);
+
+    }
+
+    .category4 path[data-renewable="high"],
+    .Renewable .high {
+        fill: var(--fill-high-renewable);
+        background-color: var(--fill-high-renewable);
+
+    }
+
+    .category4 path[data-renewable="very-high"],
+    .Renewable .very-high {
+        fill: var(--fill-very-high-renewable);
+        background-color: var(--fill-very-high-renewable);
+
+    }
+
+    /* Nuclear categories */
+    .category5 path[data-nuclear="low"],
+    .Nuclear .low {
+        fill: var(--fill-low-nuclear);
+        background-color: var(--fill-low-nuclear);
+    }
+
+    .category5 path[data-nuclear="medium"],
+    .Nuclear .medium {
+        fill: var(--fill-medium-nuclear);
+        background-color: var(--fill-medium-nuclear);
+    }
+
+    .category5 path[data-nuclear="high"],
+    .Nuclear .high {
+        fill: var(--fill-high-nuclear);
+        background-color: var(--fill-high-nuclear);
+    }
+
+    .category5 path[data-nuclear="very-high"],
+    .Nuclear .very-high {
+        fill: var(--fill-very-high-nuclear);
+        background-color: var(--fill-very-high-nuclear);
+    }
+
+    .myArea {
+        mix-blend-mode: multiply;
+    }
+
+    #buttonsDiv button {
+        font-family: var(--averia-sans-libre-font) !important;
+    }
+
+    #buttonsDiv {
+        border-bottom: 2px dashed #333;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+    }
+
+    label {
+        border-left: 20px solid #c70000;
+        margin-bottom: 8px;
+        width: 120px;
+    }
+
+    .first_darkgreen {
+        color: #426f4b
+    }
+
+    .second_darkred {
+        color: #a22525
+    }
+
+    .third_blue {
+        color: #8085bd;
+    }
+
+    .fourth_purple {
+        color: #720884;
+    }
+
+    .fifth_orange {
+        color: #ce6d22;
+    }
+
+    .sixth_lightred {
+        color: #e28383;
+    }
+
+    .seventh_pink {
+        color: #c44299;
+    }
+
+    .eighth_gray {
+        color: #686868;
+    }
+
+    .ninth_brown {
+        color: #7c5614;
+    }
+
+    .tenth_pink {
+        color: #b7508b;
+    }
+
+    .eleventh_teal {
+        color: #5ec5a6;
+    }
+
+    .twelfth_lightblue {
+        color: #43a2ca;
+    }
+
+    .thirteenth_indigo {
+        color: #c6aedf;
+    }
+
+    label[data-label="first_darkgreen"] {
+        border-left: 20px solid #426f4b;
+    }
+
+    label[data-label="second_darkred"] {
+        border-left: 20px solid #a22525;
+    }
+
+    label[data-label="third_blue"] {
+        border-left: 20px solid #8085bd;
+    }
+
+    label[data-label="fourth_purple"] {
+        border-left: 20px solid #720884;
+    }
+
+    label[data-label="fifth_orange"] {
+        border-left: 20px solid #ce6d22;
+    }
+
+    label[data-label="sixth_lightred"] {
+        border-left: 20px solid #e28383;
+    }
+
+    label[data-label="seventh_pink"] {
+        border-left: 20px solid #c44299;
+    }
+
+    label[data-label="eighth_gray"] {
+        border-left: 20px solid #686868;
+    }
+
+    label[data-label="ninth_brown"] {
+        border-left: 20px solid #7c5614;
+    }
+
+    label[data-label="tenth_pink"] {
+        border-left: 20px solid #b7508b;
+    }
+
+    label[data-label="eleventh_teal"] {
+        border-left: 20px solid #5ec5a6;
+    }
+
+    label[data-label="twelfth_lightblue"] {
+        border-left: 20px solid #43a2ca;
+    }
+
+    label[data-label="thirteenth_indigo"] {
+        border-left: 20px solid #c6aedf;
+    }
+
+    input[type="checkbox"] {
+        margin-left: -16px;
+        margin-right: 10px;
+    }
+
+
+    /* Custom checkbox styling */
+    input[type="checkbox"]+label::before {
+        content: '';
+        display: inline-block;
+        margin-right: 10px;
+        width: 16px;
+        height: 16px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        /* Optional: for rounded corners */
+        background-color: #fff;
+        /* Custom background */
+    }
+
+    #radialDiagramCheckBoxContainer {
+        position: relative;
+        max-width: 90vw;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: start;
+    }
+
+    .myArea {
+        opacity: .5;
+    }
+
+    @media (max-width: 768px) {
+
+        select,
+        .barGraphSelect {
+            padding: 6px 10px;
+            width: 100%;
+            /* Adjusted to ensure full width on smaller screens */
+        }
+
+        .gourmetMediaContainer {
+            border: 0px;
+            box-shadow: none;
+            padding: 8px;
+            border-top: 1px solid #333;
+            border-bottom: 1px solid #333;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .choropleth_graphic_area {
+            box-shadow: 3px 2px #333;
+            border: 2px solid var(--shadow-color);
+            color: var(--text-color);
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+
+        .radialDiagramCheckBoxContainer {
+            max-width: 100vw;
+        }
+
+        label {
+            width: 110px;
+        }
+
+        input[type="checkbox"] {
+            margin-left: -16px;
+            margin-right: 5px;
+        }
+
+        #categorySelect {
+            max-width: 80%;
+        }
+    }
+
+    /* Apply strikethrough text-decoration by default */
+    input[type="checkbox"]+span {
+        text-decoration: line-through;
+    }
+
+    /* Then, remove it when the checkbox is checked */
+    input[type="checkbox"]:checked+span {
+        text-decoration: none;
+    }
+
+    label {
+        font-size: 15px;
+        line-height: 16px;
+    }
+
+    #my_dataviz1,
+    #my_dataviz2 {
+        margin: 5px;
+    }
+
+    #my_dataviz1 {
+        margin-right: 10px;
+    }
+
+    #my_dataviz2 {
+        margin-left: 10px;
+    }
+
+    #radial-chart-container {
+        display: flex;
+        flex-direction: row;
+    }
+
+    text {
+        font-size: 19px;
+    }
+
+    @media only screen and (max-width: 729px) {
+        #radial-chart-container {
+            flex-direction: row;
+        }
+
+        #my_dataviz1,
+        #my_dataviz2 {
+            margin: 0px;
+        }
+
+        #my_dataviz1 {
+            margin-right: 4px;
+        }
+
+        #my_dataviz2 {
+            margin-left: 4px;
+        }
+
+        text {
+            font-size: 15px;
+        }
+    }
+
+    h4 {
+        font-size: 22px;
+    }
+</style>
+<script src="https://d3js.org/d3.v6.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
+
+<!-- ============================================ -->
+<!-- ============================================ -->
+<!-- ============================================ -->
+<div class="gourmetMediaContainer org_350">
+    <h2>What makes up 100g of food?</h2>
+    <i style="margin-top: 0px; margin-bottom: 10px;"></i>
+    <!-- Dropdown Selector -->
+    <div id="sankeyButtonsDiv" style="display: flex; flex-wrap: wrap; margin-top: 20px;"><!-- Add buttons -->
+        <button class=" active sankeyButton"
+            onclick="updateSankey(metricDetailsBank['beefRaw'].data); updateSankeyGraphDetails(metricDetailsBank['beefRaw']);">Raw
+            Beef</button>
+        <button class="sankeyButton"
+            onclick="updateSankey(metricDetailsBank['beefCooked'].data); updateSankeyGraphDetails(metricDetailsBank['beefCooked']);">Cooked
+            Beef</button>
+    </div>
+    <div class="choropleth_graphic_area">
+        <h4 id="sankeyDiagram_graphTitle" style="margin: 0; text-align: center;"><b>What nutrients make up a HAMBURGER?
+            </b></h3>
+            <p id="sankeyDiagram_graphSubhead" style="margin: 0; text-align: center; color: #333;">Rough estimates of a
+                HAMBURGER'S nutrients</p>
+            <div id="sankeyTooltip"></div>
+
+            <!-- Create a div where the graph will take place -->
+            <div id="sankeyDiagram_my_dataviz"></div>
+            <i id="sankeyDiagram_graphSource" style="margin-top: 0px;">Source: <a
+                    href="https://350.org/annual-report/#financial">USDA FoodData Database</a></i>
+    </div>
+    <div class="choropleth_bottomBand"
+        style=" display: flex; flex-direction: row; justify-content: space-between; height: 30px;">
+        <div class="choropleth_donationButtons"
+            style=" display: flex; flex-direction: row; justify-content: center; padding-top: 14px; margin-top: 10px; opacity: 0;">
+            <a href="https://juweek.studio/" target="_blank">
+                <button>Learn More</button>
+            </a>
+        </div>
+        <div>
+            <img src="https://images.squarespace-cdn.com/content/61e3e0fa2531e62193f7e651/3dda0d4b-4946-443a-885f-0cba9a119cfe/me_typing_transparent.gif?content-type=image%2Fgif"
+                alt="Girl in a jacket" width="120" height="110" style="margin-top: -70px; position: relative;">
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- ============================================ -->
+<!-- ============================================ -->
+<script>
+    // Set the dimensions and margins of the graph
+    var containerWidth = document.getElementById('sankeyDiagram_my_dataviz').clientWidth;
+    var margin = { top: 30, right: 10, bottom: 30, left: 10 },
+        width = containerWidth - margin.left - margin.right;
+    height = 450 - margin.top - margin.bottom;
+
+    // Append the svg object to the body of the page
+    var sankeySVG = d3.select("#sankeyDiagram_my_dataviz")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // Set the sankey diagram properties globally
+    var sankey = d3.sankey()
+        .nodeWidth(20)
+        .nodePadding(17)
+        .extent([[0, 2], [width - 1, height - 5]])
+
+    // Define the button sets and phrase bank
+    var metricDetailsBank = {
+        "beefJerky": {
+            title: "What nutrients make up a BEEF JERKY?",
+            subhead: "ROUGH estimate of a 100g of BEEF JERKY",
+            source: "https://350.org/annual-report/#financial",
+            phrase: "Grade 4 Math",
+            data: `{
+              "nodes":[{"node":0,"name":"Total"},
+{"node":1,"name":"Water"},
+{"node":2,"name":"Nutr./Mins."},
+{"node":3,"name":"Protein"},
+{"node":4,"name":"Amino Acids"},
+{"node":5,"name":"Waste"},
+{"node":6,"name":"Fat"},
+{"node":7,"name":"Sat."},
+{"node":8,"name":"Mono"},
+{"node":9,"name":"Poly"},
+{"node":10,"name":"Other Fats"},
+{"node":11,"name":"Fatty Acids"},
+{"node":12,"name":"Glycerol"},
+{"node":13,"name":"Carbs"},
+{"node":14,"name":"Sugars"},
+{"node":15,"name":"Fiber"},
+{"node":16,"name":"Starch"}],"links":[{"source":0,"target":1,"value":23.4},
+{"source":0,"target":2,"value":6.81},
+{"source":0,"target":3,"value":33.2},
+{"source":3,"target":4,"value":29.880000000000003},
+{"source":3,"target":5,"value":2.3200000000000003},
+{"source":0,"target":6,"value":25.6},
+{"source":6,"target":7,"value":10.8},
+{"source":6,"target":8,"value":11.3},
+{"source":6,"target":9,"value":1.01},
+{"source":6,"target":10,"value":2.4899999999999984},
+{"source":7,"target":11,"value":10.26},
+{"source":7,"target":12,"value":0.54},
+{"source":8,"target":11,"value":10.735},
+{"source":8,"target":12,"value":0.5650000000000001},
+{"source":9,"target":11,"value":0.9594999999999999},
+{"source":9,"target":12,"value":0.0505},
+{"source":0,"target":13,"value":11.0},
+{"source":13,"target":14,"value":9.0},
+{"source":13,"target":15,"value":1.8},
+{"source":13,"target":16,"value":0.19999999999999996}]}`
+        },
+        "beefRaw": {
+            title: "What nutrients make up a RAW BEEF STRIPS?",
+            subhead: "ROUGH estimate of a 100g of RAW BEEF STRIPS",
+            source: "https://350.org/annual-report/#financial",
+            phrase: "Grade 4 Reading",
+            data: `{"nodes":[{"node":0,"name":"Total"},
+{"node":1,"name":"Water"},
+{"node":2,"name":"Nutr./Mins."},
+{"node":3,"name":"Protein"},
+{"node":4,"name":"Amino Acids"},
+{"node":5,"name":"Waste"},
+{"node":6,"name":"Fat"},
+{"node":7,"name":"Sat."},
+{"node":8,"name":"Mono"},
+{"node":9,"name":"Poly"},
+{"node":10,"name":"Other Fats"},
+{"node":11,"name":"Fatty Acids"},
+{"node":12,"name":"Glycerol"},
+{"node":13,"name":"Carbs"},
+{"node":14,"name":"Sugars"},
+{"node":15,"name":"Fiber"},
+{"node":16,"name":"Starch"}],"links":[{"source":0,"target":1,"value":64.8},
+{"source":0,"target":2,"value":1.96},
+{"source":0,"target":3,"value":20.0},
+{"source":3,"target":4,"value":18.0},
+{"source":3,"target":5,"value":2.0},
+{"source":0,"target":6,"value":14.4},
+{"source":6,"target":7,"value":6.04},
+{"source":6,"target":8,"value":6.5},
+{"source":6,"target":9,"value":0.617},
+{"source":6,"target":10,"value":1.2430000000000003},
+{"source":7,"target":11,"value":5.7379999999999995},
+{"source":7,"target":12,"value":0.30200000000000005},
+{"source":8,"target":11,"value":6.175},
+{"source":8,"target":12,"value":0.325},
+{"source":9,"target":11,"value":0.58615},
+{"source":9,"target":12,"value":0.030850000000000002},
+{"source":0,"target":13,"value":0.0},
+{"source":13,"target":14,"value":0.0},
+{"source":13,"target":15,"value":0.0},
+{"source":13,"target":16,"value":0.0}]}`
+        },
+        "beefCooked": {
+            title: "What nutrients make up COOKED BEEF STRIPS?",
+            subhead: "ROUGH estimate of a 100g of COOKED BEEF STRIPS",
+            source: "https://350.org/annual-report/#financial",
+            phrase: "Grade 4 Math",
+            data: `{"nodes":[{"node":0,"name":"Total"},
+{"node":1,"name":"Water"},
+{"node":2,"name":"Nutr./Mins."},
+{"node":3,"name":"Protein"},
+{"node":4,"name":"Amino Acids"},
+{"node":5,"name":"Waste"},
+{"node":6,"name":"Fat"},
+{"node":7,"name":"Sat."},
+{"node":8,"name":"Mono"},
+{"node":9,"name":"Poly"},
+{"node":10,"name":"Other Fats"},
+{"node":11,"name":"Fatty Acids"},
+{"node":12,"name":"Glycerol"},
+{"node":13,"name":"Carbs"},
+{"node":14,"name":"Sugars"},
+{"node":15,"name":"Fiber"},
+{"node":16,"name":"Starch"}],"links":[{"source":0,"target":1,"value":57.0},
+{"source":0,"target":2,"value":1.01},
+{"source":0,"target":3,"value":26.1},
+{"source":3,"target":4,"value":23.490000000000002},
+{"source":3,"target":5,"value":2.6100000000000003},
+{"source":0,"target":6,"value":16.6},
+{"source":6,"target":7,"value":6.78},
+{"source":6,"target":8,"value":7.41},
+{"source":6,"target":9,"value":0.733},
+{"source":6,"target":10,"value":1.6769999999999996},
+{"source":7,"target":11,"value":6.441},
+{"source":7,"target":12,"value":0.339},
+{"source":8,"target":11,"value":7.039499999999999},
+{"source":8,"target":12,"value":0.37050000000000005},
+{"source":9,"target":11,"value":0.6963499999999999},
+{"source":9,"target":12,"value":0.03665},
+{"source":0,"target":13,"value":0.0},
+{"source":13,"target":14,"value":0.0},
+{"source":13,"target":15,"value":0.0},
+{"source":13,"target":16,"value":0.0}]}`
+        }
+    };
+
+    /*
+     ===============
+       // Show tooltip
+     ===============
+     */
+    function showSankeyTooltip(event, d) {
+        var sankeyTooltip = d3.select("#sankeyTooltip");
+        var [x, y] = d3.pointer(event, this.parentNode); // Assuming 'this' is the rect and parentNode is the SVG
+        var htmlContent
+        if (d.source && d.target) {
+            // Assuming you want to show information about the link
+            var valueFormatted = d3.format(",")(Math.round(d.value * 1000000)); // Adjust multiplier based on your data scaling
+            htmlContent = `$${valueFormatted} from ${d.source.name} was spent on ${d.target.name}`;
+        }
+        // Otherwise, assume 'd' is a node (option 2)
+        else {
+            // Assuming you want to show information about the node
+            var valueFormatted = d3.format(",")(Math.round(d.value * 1000000)); // Adjust multiplier based on your data scaling
+            htmlContent = `${d.name}<br>Amount spent: ${d.value}g`;
+        }
+
+        sankeyTooltip.html(htmlContent)
+            .style("left", (x + 5) + "px")
+            .style("top", (y + 300) + "px")
+            .transition()
+            .duration(200)
+            .style("opacity", 1);
+    }
+
+    /*
+     ===============
+       // Hide tooltip
+     ===============
+     */
+    function hideSankeyTooltip() {
+        var sankeyTooltip = d3.select("#sankeyTooltip");
+        sankeyTooltip.transition()
+            .duration(200)
+            .style("opacity", 0);
+    }
+
+    /*
+  ===============
+    // Function to sort the nodes so they are always in the same dimensions
+  ===============
+  */
+    function sortNodes(nodes) {
+        // Define a fixed order for the node names
+        const order = ["Beef", "Protein", "Carbs", "Saturated", "Amino Acids", "Glucose", "Waste", "Other", "Fat", "Water", "Mono", "Poly", "Fatty Acids", "Glycerol", "Micronutrients", "Fiber"];
+
+
+        // Sort nodes based on the order array
+        nodes.sort((a, b) => order.indexOf(a.name) - order.indexOf(b.name));
+    }
+
+
+    /*
+  ===============
+    // Function to highlight the opacity of the nodes and its connected links
+  ===============
+  */
+  function highlightNode(event, d) {
+    const allLinks = sankeySVG.selectAll(".link");
+    const allNodes = sankeySVG.selectAll(".node rect");
+    const allTexts = sankeySVG.selectAll(".node text");  // Select all text elements of nodes
+
+
+    if (event.type === "mouseover") {
+        let highlightedNodes = new Set([d]); // Start with the current node
+        let highlightedLinks = new Set();
+
+        // Function to highlight downstream nodes
+        function highlightChildren(node) {
+            allLinks.each(function(link) {
+                if (link.source === node) {
+                    highlightedLinks.add(link);
+                    if (!highlightedNodes.has(link.target)) {
+                        highlightedNodes.add(link.target);
+                        highlightChildren(link.target); // Recursively highlight children
+                    }
+                }
+            });
+        }
+
+        // Function to highlight upstream nodes
+        function highlightParents(node) {
+            allLinks.each(function(link) {
+                if (link.target === node) {
+                    highlightedLinks.add(link);
+                    if (!highlightedNodes.has(link.source)) {
+                        highlightedNodes.add(link.source);
+                        highlightParents(link.source); // Recursively highlight parents
+                    }
+                }
+            });
+        }
+
+        // Start highlighting process for both children and parents
+        highlightChildren(d);
+        highlightParents(d);
+
+        // Set opacity for all links and nodes based on whether they are highlighted
+        allLinks.style("stroke-opacity", link => highlightedLinks.has(link) ? 0.8 : 0.05);
+        allNodes.style("opacity", node => highlightedNodes.has(node) ? 1 : 0.05);
+        allTexts.style("opacity", text => highlightedNodes.has(text) ? 1 : 0.1);  // Adjust opacity of text elements
+
+
+    } else if (event.type === "mouseout") {
+        // Reset opacities to normal
+        allLinks.style("stroke-opacity", 0.9);
+        allNodes.style("opacity", 1);
+        allTexts.style("opacity", 1);  // Reset text opacity
+
+    }
+}
+
+
+
+    /*
+      ===============
+        // Function to update the title, the subhead, etc of the graph
+      ===============
+      */
+    function updateSankeyGraphDetails(details) {
+        document.getElementById("sankeyDiagram_graphTitle").innerHTML = "<b>" + details.title + "</b>";
+        document.getElementById("sankeyDiagram_graphSubhead").textContent = details.subhead;
+        document.getElementById("sankeyDiagram_graphSource").innerHTML = 'Source: <a href="' + details.source + '">USDA FoodData Database</a>';
+    }
+
+
+    /*
+===============
+  // Function to update the graph dimensions
+===============
+*/
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const sankeyButtons = document.querySelectorAll('.sankeyButton');
+        const sankeySVGContainer = document.getElementById('sankeyDiagram_my_dataviz');
+
+        sankeyButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                // Remove 'active' class from all buttons
+                sankeyButtons.forEach(btn => btn.classList.remove('active'));
+
+                // Add 'active' class to the clicked button
+                this.classList.add('active');
+            });
+        });
+    })
+
+    /*
+    ===============
+      // Function to update the graph dimensions
+    ===============
+    */
+    function sankeyResizeGraph() {
+        // Detect if the device is likely a mobile device or desktop
+        var isMobile = window.innerWidth < 768; // Example threshold
+
+        // Set dimensions based on the device type
+        var containerWidth = document.getElementById('sankeyDiagram_my_dataviz').clientWidth;
+        if (isMobile) {
+            // Adjust dimensions for mobile
+            width = containerWidth - margin.left - margin.right;
+            height = 450; // Or any other dimension suitable for mobile
+        } else {
+            // Adjust dimensions for desktop
+            width = (containerWidth / 2) - margin.left - margin.right;
+            height = 450; // Or any other dimension suitable for desktop
+        }
+
+        // Update the sankeySVG dimensions
+        sankeySVG.attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom);
+    }
+
+    /*
+    ===============
+    // A function that create / update the plot for a given variable:
+    ===============
+    */
+    function updateSankey(jsonData) {
+        var graph = JSON.parse(jsonData);
+
+        graph.links = graph.links.filter(link => link.value > 0);
+        let activeNodes = new Set();
+        graph.links.forEach(link => {
+            activeNodes.add(link.source);
+            activeNodes.add(link.target);
+        });
+
+        // Filter nodes to only include those active in non-zero links
+        graph.nodes = graph.nodes.filter(node => activeNodes.has(node.node));
+
+        sankey
+            .nodes(graph.nodes)
+            .links(graph.links);
+
+        var widthScale = d3.scaleLinear()
+            .domain([1, d3.max(graph.links, d => d.value)])
+            .range([1, 70]);
+
+        var sankeyData = sankey({
+            nodes: graph.nodes.map(d => ({ ...d })),
+            links: graph.links.map(d => ({ ...d, source: d.source, target: d.target }))
+        });
+
+       // Create sets for source and target nodes to find terminal nodes
+        var sources = new Set();
+        var targets = new Set();
+
+        graph.links.forEach(link => {
+            sources.add(link.source.node);
+            targets.add(link.target.node);
+        });
+
+
+        var nodeColor = {
+    "Total": "#658394", // Red for Total remains
+    "Water": "#658394", // Blue for Water remains
+    "Protein": "#54886A", // Changed to green for Protein
+    "Amino Acids": "#54886A", // Green for Amino Acids
+    "Waste": "#875B27", // Brown for Waste remains
+    "Fat": "#CE944D", // Changed to orange for Fat
+    "Sat.": "#CE944D", // Changed to a shade of yellow for Saturated Fat
+    "Mono": "#CE944D", // Yellow for Monounsaturated Fat
+    "Poly": "#CE944D", // Yellow for Polyunsaturated Fat
+    "Fatty Acids": "#FFD700", // Yellow for Fatty Acids
+    "Glycerol": "#FF4500", // Red for Glycerol
+    "Other Fats": "#FF4500", // Red for Other Fats
+    "Carbs": "#AA3D3D", // Red for Carbs remains
+    "Sugars": "#AA3D3D", // Red for Sugars
+    "Fiber": "#ff0000", // Red for Fiber remains
+    "Nutr./Mins.": "#0000ff", // Blue for Nutrients/Minerals remains
+};
+
+
+        // Define a color map based on link characteristics
+        var linkColor = {
+    "Total-Water": "#9CBBC8", // Blue for Water remains
+    "Total-Protein": "#67B080", // Green for Total to Protein
+    "Total-Fat": "#FFA500", // Orange for Total to Fat
+    "Total-Nutr./Mins.": "#9386A4", // Orange for Total to Fat
+    "Protein-Amino Acids": "#67B080", // Green for Protein to Amino Acids
+    "Protein-Waste": "#875B27", // Brown for Protein to Waste
+    "Fat-Mono": "#FBBD69", // Yellow for Fat to Mono
+    "Fat-Sat.": "#FBBD69", // Yellow for Fat to Saturated
+    "Fat-Poly": "#FBBD69", // Yellow for Fat to Polyunsaturated
+    "Mono-Fatty Acids": "#EAC542", // Yellow for Mono to Fatty Acids
+    "Sat.-Fatty Acids": "#EAC542", // Yellow for Saturated to Fatty Acids
+    "Poly-Fatty Acids": "#EAC542", // Yellow for Poly to Fatty Acids
+    "Mono-Glycerol": "#FF4500", // Red for Mono to Glycerol
+    "Poly-Glycerol": "#FF4500", // Red for Poly to Glycerol
+    "Sat.-Glycerol": "#FF4500", // Red for Saturated to Glycerol
+    "Fat-Other Fats": "#F27648", // Red for Fat to Other Fats
+};
+
+
+        var terminalNodes = Array.from(targets).filter(node => !sources.has(node));
+
+        // Assuming 'sankeySVG' is your main SVG element where the Sankey diagram is drawn
+        var defs = sankeySVG.select("defs").size() === 0 ? sankeySVG.append("defs") : sankeySVG.select("defs");
+        defs.selectAll("linearGradient").remove();
+
+
+        // Create a gradient for each link based on node colors
+        graph.links.forEach(function (link, index) {
+            var gradient = defs.append("linearGradient")
+                .attr("id", "gradient-" + index) // Unique ID for each gradient
+                .attr("gradientUnits", "userSpaceOnUse")
+                .attr("x1", "0%")
+                .attr("y1", "0%")
+                .attr("x2", "100%")
+                .attr("y2", "0%");
+
+            gradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", nodeColor[link.source.name]);
+
+            gradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", nodeColor[link.target.name]);
+        });
+
+        // Select and update the links
+        var link = sankeySVG.selectAll(".link")
+            .data(graph.links, function (d) { return d.source.node + "-" + d.target.node; });
+
+        var linkEnter = link
+            .enter()
+            .append("path")
+            .attr("class", "link")
+            .style("stroke-width", function (d) { return Math.max(1, d.width); })
+            .style("stroke-opacity", 0.9)
+            .style("stroke", function (d, i) {
+                let currentVariable = (d.source.name + '-' + d.target.name)
+                return linkColor[currentVariable]
+            })
+
+        // Update existing links
+        link.merge(linkEnter)
+            .transition()
+            .duration(750)
+            .attr("d", d3.sankeyLinkHorizontal())
+            .style("stroke-width", function (d) { return Math.max(1, d.width); });
+
+
+        link.exit().remove();
+
+        // Select and update the nodes
+        var node = sankeySVG.selectAll(".node")
+            .data(graph.nodes, function (d) { return d.node; });
+
+        var nodeEnter = node.enter().append("g")
+            .attr("class", "node")
+            .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+
+        nodeEnter.merge(node)
+            .transition()
+            .duration(750)
+            .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+        nodeEnter.append("rect")
+            .merge(node.select("rect"))
+            .attr("height", d => d.y1 - d.y0)
+            .attr("width", sankey.nodeWidth())
+            .style("fill", d => nodeColor[d.name])
+            .on("mouseover", function (event, d) {
+                //showSankeyTooltip(event, d);
+                highlightNode(event, d);
+            })
+            .on("mouseout", function (event, d) {
+                //hideSankeyTooltip();
+                highlightNode(event, d);
+            });
+
+            // Determine if the device is mobile
+            var isMobile = window.innerWidth < 768;
+
+            // Only append text if it's a new node
+            nodeEnter.append("text")
+                    .attr("x", 10)
+                    .attr("y", 10)
+                    .attr("dy", "0.35em")
+                    .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
+                    .style("font-size", "13px")
+                    .text(d => `${d.name} (${d3.format(".0f")(d.value)}g)`);
+
+                // Update text for all existing nodes
+                node.select("text")
+                    .transition()
+                    .duration(750)
+                    .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
+                    .text(d => `${d.name} (${d3.format(".0f")(d.value)}g)`);
+
+                node.merge(nodeEnter)
+                    .transition()
+                    .duration(750)
+                    .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+        node.exit().remove();
+    }
+
+    // Event listener for window resize
+    var resizeTimeout;
+
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(sankeyResizeGraph, 500); // Add a delay to avoid too many redraws
+    });
+
+    // Initialize plot
+    updateSankey(metricDetailsBank['beefRaw'].data)
+    sankeyResizeGraph()
+</script>
