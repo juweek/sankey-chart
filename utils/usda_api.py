@@ -1,12 +1,14 @@
+import os
 import requests
 import logging
 from typing import Dict, Optional
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 # USDA FoodData API base URL
 BASE_URL = "https://api.nal.usda.gov/fdc/v1"
-API_KEY = "DEMO_KEY"  # Replace with actual API key in production
+API_KEY = os.environ.get("USDA_API_KEY", "DEMO_KEY")
 
 def get_food_data(food_id: str) -> Optional[Dict]:
     """
