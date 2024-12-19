@@ -1,4 +1,64 @@
 // Define color schemes
+// Search functionality
+document.getElementById('searchButton').addEventListener('click', performSearch);
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        performSearch();
+    }
+});
+
+function performSearch() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (!query) return;
+
+    const searchResults = document.getElementById('searchResults');
+    searchResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    searchResults.style.display = 'block';
+
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
+            searchResults.innerHTML = '';
+            if (data.results.length === 0) {
+                searchResults.innerHTML = '<div class="alert alert-info">No results found</div>';
+                return;
+            }
+
+            data.results.forEach(food => {
+                const button = document.createElement('button');
+                button.className = 'list-group-item list-group-item-action';
+                button.innerHTML = `
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${food.description}</h6>
+                        <small>${food.dataType}</small>
+                    </div>
+                    ${food.brandOwner ? `<small class="text-muted">Brand: ${food.brandOwner}</small>` : ''}
+                `;
+                button.addEventListener('click', () => {
+                    // Update buttons
+                    document.querySelectorAll('#foodControls button').forEach(btn => btn.classList.remove('active'));
+                    
+                    // Update Sankey diagram
+                    updateSankey(food.fdcId);
+                    
+                    // Hide search results
+                    searchResults.style.display = 'none';
+                    
+                    // Clear search input
+                    document.getElementById('searchInput').value = '';
+                });
+                searchResults.appendChild(button);
+            });
+        })
+        .catch(error => {
+            searchResults.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        });
+}
+
 const nodeColor = {
     "Total": "#658394",
     "Water": "#658394",
