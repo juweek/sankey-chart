@@ -72,8 +72,9 @@ async function updateSankey(foodId) {
         // Remove loading state
         d3.select(".loading").remove();
 
-        // Clear existing diagram
+        // Clear existing diagram and nutrient details
         svg.selectAll("*").remove();
+        updateNutrientDetails(data);
 
         // Generate the Sankey layout
         const { nodes, links } = sankey(data);
@@ -200,3 +201,50 @@ window.addEventListener('resize', () => {
     sankey.extent([[0, 2], [width - 1, height - 5]]);
     updateSankey(document.querySelector('#foodControls button.active').dataset.foodId);
 });
+
+// Function to update the nutrient details text view
+function updateNutrientDetails(data) {
+    const macroNutrients = document.getElementById('macroNutrients');
+    const fatBreakdown = document.getElementById('fatBreakdown');
+    const additionalInfo = document.getElementById('additionalInfo');
+
+    // Find node values
+    const findNodeValue = (name) => {
+        const node = data.nodes.find(n => n.name === name);
+        const links = data.links.filter(l => l.target === node?.node);
+        return links.reduce((sum, link) => sum + link.value, 0);
+    };
+
+    // Format macronutrients
+    const macroHTML = `
+        <ul class="list-unstyled">
+            <li>Water: ${findNodeValue('Water').toFixed(1)}g</li>
+            <li>Protein: ${findNodeValue('Protein').toFixed(1)}g</li>
+            <li>Carbohydrates: ${findNodeValue('Carbs').toFixed(1)}g</li>
+            <li>Total Fat: ${findNodeValue('Fat').toFixed(1)}g</li>
+        </ul>
+    `;
+
+    // Format fat breakdown
+    const fatHTML = `
+        <ul class="list-unstyled">
+            <li>Saturated Fat: ${findNodeValue('Sat.').toFixed(1)}g</li>
+            <li>Monounsaturated Fat: ${findNodeValue('Mono').toFixed(1)}g</li>
+            <li>Polyunsaturated Fat: ${findNodeValue('Poly').toFixed(1)}g</li>
+            <li>Other Fats: ${findNodeValue('Other Fats').toFixed(1)}g</li>
+        </ul>
+    `;
+
+    // Format additional information
+    const additionalHTML = `
+        <ul class="list-unstyled">
+            <li>Sugars: ${findNodeValue('Sugars').toFixed(1)}g</li>
+            <li>Fiber: ${findNodeValue('Fiber').toFixed(1)}g</li>
+            <li>Minerals & Nutrients: ${findNodeValue('Nutr./Mins.').toFixed(1)}g</li>
+        </ul>
+    `;
+
+    macroNutrients.innerHTML = macroHTML;
+    fatBreakdown.innerHTML = fatHTML;
+    additionalInfo.innerHTML = additionalHTML;
+}
