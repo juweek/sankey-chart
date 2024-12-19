@@ -116,6 +116,63 @@ const svg = d3.select("#sankeyDiagram_my_dataviz")
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
+/*
+  ===============
+    // Function to highlight the opacity of the nodes and its connected links
+  ===============
+  */
+  function highlightNode(event, d) {
+    const allLinks = svg.selectAll(".link");
+    const allNodes = svg.selectAll(".node rect");
+    const allTexts = svg.selectAll(".node text");  // Select all text elements of nodes
+
+    if (event.type === "mouseover") {
+        let highlightedNodes = new Set([d]); // Start with the current node
+        let highlightedLinks = new Set();
+
+        // Function to highlight downstream nodes
+        function highlightChildren(node) {
+            allLinks.each(function(link) {
+                if (link.source === node) {
+                    highlightedLinks.add(link);
+                    if (!highlightedNodes.has(link.target)) {
+                        highlightedNodes.add(link.target);
+                        highlightChildren(link.target); // Recursively highlight children
+                    }
+                }
+            });
+        }
+
+        // Function to highlight upstream nodes
+        function highlightParents(node) {
+            allLinks.each(function(link) {
+                if (link.target === node) {
+                    highlightedLinks.add(link);
+                    if (!highlightedNodes.has(link.source)) {
+                        highlightedNodes.add(link.source);
+                        highlightParents(link.source); // Recursively highlight parents
+                    }
+                }
+            });
+        }
+
+        // Start highlighting process for both children and parents
+        highlightChildren(d);
+        highlightParents(d);
+
+        // Set opacity for all links and nodes based on whether they are highlighted
+        allLinks.style("stroke-opacity", link => highlightedLinks.has(link) ? 0.8 : 0.05);
+        allNodes.style("opacity", node => highlightedNodes.has(node) ? 1 : 0.05);
+        allTexts.style("opacity", text => highlightedNodes.has(text) ? 1 : 0.1);  // Adjust opacity of text elements
+
+    } else if (event.type === "mouseout") {
+        // Reset opacities to normal
+        allLinks.style("stroke-opacity", 0.2);
+        allNodes.style("opacity", 1);
+        allTexts.style("opacity", 1);  // Reset text opacity
+    }
+}
+
 // Function to update the Sankey diagram
 async function updateSankey(foodId) {
     try {
@@ -152,8 +209,14 @@ async function updateSankey(foodId) {
                 return linkColor[linkId] || "#666363";
             })
             .style("stroke-opacity", 0.2)
-            .on("mouseover", showTooltip)
-            .on("mouseout", hideTooltip);
+            .on("mouseover", function(event, d) {
+                showTooltip(event, d);
+                highlightNode(event, d);
+            })
+            .on("mouseout", function(event, d) {
+                hideTooltip();
+                highlightNode(event, d);
+            });
 
         // Add nodes
         const node = svg.append("g")
@@ -168,8 +231,14 @@ async function updateSankey(foodId) {
             .attr("height", d => d.y1 - d.y0)
             .attr("width", d => d.x1 - d.x0)
             .attr("fill", d => nodeColor[d.name] || "#666")
-            .on("mouseover", showTooltip)
-            .on("mouseout", hideTooltip);
+            .on("mouseover", function(event, d) {
+                showTooltip(event, d);
+                highlightNode(event, d);
+            })
+            .on("mouseout", function(event, d) {
+                hideTooltip();
+                highlightNode(event, d);
+            });
 
         // Add labels
         node.append("text")
