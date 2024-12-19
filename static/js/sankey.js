@@ -1,3 +1,42 @@
+// Define color schemes
+const nodeColor = {
+    "Total": "#658394",
+    "Water": "#658394",
+    "Protein": "#54886A",
+    "Amino Acids": "#54886A",
+    "Waste": "#875B27",
+    "Fat": "#CE944D",
+    "Sat.": "#CE944D",
+    "Mono": "#CE944D",
+    "Poly": "#CE944D",
+    "Fatty Acids": "#FFD700",
+    "Glycerol": "#FF4500",
+    "Other Fats": "#FF4500",
+    "Carbs": "#AA3D3D",
+    "Sugars": "#AA3D3D",
+    "Fiber": "#ff0000",
+    "Nutr./Mins.": "#0000ff"
+};
+
+const linkColor = {
+    "Total-Water": "#9CBBC8",
+    "Total-Protein": "#67B080",
+    "Total-Fat": "#FFA500",
+    "Total-Nutr./Mins.": "#9386A4",
+    "Protein-Amino Acids": "#67B080",
+    "Protein-Waste": "#875B27",
+    "Fat-Mono": "#FBBD69",
+    "Fat-Sat.": "#FBBD69",
+    "Fat-Poly": "#FBBD69",
+    "Mono-Fatty Acids": "#EAC542",
+    "Sat.-Fatty Acids": "#EAC542",
+    "Poly-Fatty Acids": "#EAC542",
+    "Mono-Glycerol": "#FF4500",
+    "Poly-Glycerol": "#FF4500",
+    "Sat.-Glycerol": "#FF4500",
+    "Fat-Other Fats": "#F27648"
+};
+
 // Set up dimensions and margins
 const margin = { top: 30, right: 10, bottom: 30, left: 10 };
 let width = document.getElementById('sankeyDiagram_my_dataviz').clientWidth - margin.left - margin.right;
@@ -47,6 +86,10 @@ async function updateSankey(foodId) {
             .attr("class", "link")
             .attr("d", d3.sankeyLinkHorizontal())
             .attr("stroke-width", d => Math.max(1, d.width))
+            .style("stroke", d => {
+                const linkId = `${d.source.name}-${d.target.name}`;
+                return linkColor[linkId] || "#666363";
+            })
             .style("stroke-opacity", 0.2)
             .on("mouseover", showTooltip)
             .on("mouseout", hideTooltip);
@@ -63,7 +106,7 @@ async function updateSankey(foodId) {
         node.append("rect")
             .attr("height", d => d.y1 - d.y0)
             .attr("width", d => d.x1 - d.x0)
-            .attr("fill", "#666")
+            .attr("fill", d => nodeColor[d.name] || "#666")
             .on("mouseover", showTooltip)
             .on("mouseout", hideTooltip);
 
@@ -126,6 +169,11 @@ function updateGraphDetails(foodId) {
     const details = titles[foodId];
     document.getElementById("sankeyDiagram_graphTitle").innerHTML = `<b>${details.title}</b>`;
     document.getElementById("sankeyDiagram_graphSubhead").textContent = details.subhead;
+    
+    // Update source link with direct USDA food data link
+    const usdaLink = `https://fdc.nal.usda.gov/fdc-app.html#/food-details/${foodId}/nutrients`;
+    document.getElementById("sankeyDiagram_graphSource").innerHTML = 
+        `Source: <a href="${usdaLink}" target="_blank">USDA FoodData Central Database</a>`;
 }
 
 // Event listeners for buttons
