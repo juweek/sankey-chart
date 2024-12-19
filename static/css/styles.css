@@ -39,6 +39,21 @@
     stroke: #666363;
     stroke-opacity: 0.2;
 }
+.link {
+    transition: stroke-opacity 0.3s ease, stroke-width 0.3s ease;
+}
+
+.node rect {
+    transition: opacity 0.3s ease;
+}
+
+.node text {
+    transition: opacity 0.3s ease;
+}
+
+.link:hover {
+    stroke-width: 2px;
+}
 
 .link:hover {
     stroke-opacity: 0.5;

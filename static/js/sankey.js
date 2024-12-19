@@ -72,10 +72,11 @@ const nodeColor = {
     "Fatty Acids": "#FFD700",
     "Glycerol": "#FF4500",
     "Other Fats": "#FF4500",
-    "Carbs": "#AA3D3D",
-    "Sugars": "#AA3D3D",
-    "Fiber": "#ff0000",
-    "Nutr./Mins.": "#0000ff"
+    "Carbs": "#ffcdd2",
+    "Sugars": "#ffcdd2",
+    "Fiber": "#ffcdd2",
+    "Starch": "#ffcdd2",
+    "Nutr./Mins.": "#0000ff",
 };
 
 const linkColor = {
@@ -124,7 +125,8 @@ const svg = d3.select("#sankeyDiagram_my_dataviz")
   function highlightNode(event, d) {
     const allLinks = svg.selectAll(".link");
     const allNodes = svg.selectAll(".node rect");
-    const allTexts = svg.selectAll(".node text");  // Select all text elements of nodes
+    const allTexts = svg.selectAll(".node text");
+    const allLabels = svg.selectAll(".node-label");
 
     if (event.type === "mouseover") {
         let highlightedNodes = new Set([d]); // Start with the current node
@@ -161,9 +163,17 @@ const svg = d3.select("#sankeyDiagram_my_dataviz")
         highlightParents(d);
 
         // Set opacity for all links and nodes based on whether they are highlighted
-        allLinks.style("stroke-opacity", link => highlightedLinks.has(link) ? 0.8 : 0.05);
-        allNodes.style("opacity", node => highlightedNodes.has(node) ? 1 : 0.05);
-        allTexts.style("opacity", text => highlightedNodes.has(text) ? 1 : 0.1);  // Adjust opacity of text elements
+        allLinks
+            .style("stroke-opacity", link => highlightedLinks.has(link) ? 0.8 : 0.05)
+            .style("transition", "stroke-opacity 0.3s ease");
+            
+        allNodes
+            .style("opacity", node => highlightedNodes.has(node) ? 1 : 0.05)
+            .style("transition", "opacity 0.3s ease");
+            
+        allTexts
+            .style("opacity", text => highlightedNodes.has(text.parentNode.__data__) ? 1 : 0.1)
+            .style("transition", "opacity 0.3s ease");
 
     } else if (event.type === "mouseout") {
         // Reset opacities to normal
