@@ -18,12 +18,21 @@
                         <button class="btn btn-primary" type="button" id="searchButton">Search</button>
                     </div>
                     <div id="searchResults" class="list-group mb-3" style="display: none;"></div>
+                    <div id="loading" class="text-center" style="display: none;">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="choropleth_graphic_area">
-                    <h4 id="sankeyDiagram_graphTitle" class="text-center mb-3"></h4>
-                    <p id="sankeyDiagram_graphSubhead" class="text-center mb-4"></p>
+                    <h4 id="sankeyDiagram_graphTitle" class="text-center mb-3">Search for a food item to view its nutrient breakdown</h4>
+                    <p id="sankeyDiagram_graphSubhead" class="text-center mb-4">Type in the search box above to get started</p>
                     <div id="sankeyTooltip"></div>
-                    <div id="sankeyDiagram_my_dataviz"></div>
+                    <div id="sankeyDiagram_my_dataviz">
+                        <div class="text-center initial-message">
+                            <p>Enter a food item in the search box to see its nutritional breakdown</p>
+                        </div>
+                    </div>
                     <div id="sankeyDiagram_graphSource" class="text-center mt-3">
                         Source: <a href="https://fdc.nal.usda.gov/">USDA FoodData Database</a>
                     </div>

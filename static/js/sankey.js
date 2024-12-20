@@ -109,10 +109,10 @@ const nodeColor = {
     "Fatty Acids": "#CE944D",
     "Glycerol": "#FF4500",
     "Other Fats": "#CE944D",
-    "Carbs": "#c70000",
-    "Sugars": "#c70000",
-    "Fiber": "#c70000",
-    "Starch": "#c70000",
+    "Carbs": "#ff9999",
+    "Sugars": "#ff9999",
+    "Fiber": "#ff9999",
+    "Starch": "#ff9999",
     "Nutr./Mins.": "#0000ff",
 };
 
@@ -150,13 +150,22 @@ const sankey = d3.sankey()
     .nodePadding(17)
     .extent([[0, 2], [width - 1, height - 5]]);
 
-// Create SVG container
-const svg = d3.select("#sankeyDiagram_my_dataviz")
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
+// Create SVG container only when needed
+let svg;
+function initializeSVG() {
+    // Clear existing content
+    d3.select("#sankeyDiagram_my_dataviz").selectAll("*").remove();
+    
+    // Create new SVG
+    svg = d3.select("#sankeyDiagram_my_dataviz")
+        .append("svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+    
+    return svg;
+}
 
 /*
   ===============
