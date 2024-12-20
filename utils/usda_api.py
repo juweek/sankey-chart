@@ -10,10 +10,7 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_URL = "https://api.nal.usda.gov/fdc/v1"
 API_KEY = os.environ.get("USDA_API_KEY", "DEMO_KEY")
 
-
-def search_foods(query: str,
-                 page_size: int = 10,
-                 page: int = 1) -> Optional[Dict]:
+def search_foods(query: str, page_size: int = 10, page: int = 1) -> Optional[Dict]:
     """
     Search for foods in USDA FoodData API with pagination support
     
@@ -35,33 +32,32 @@ def search_foods(query: str,
             "query": query,
             "pageSize": page_size,
             "pageNumber": page,
-            "dataType": ["Survey (FNDDS)", "SR Legacy",
-                         "Branded"]  # Include branded foods
+            "dataType": ["Survey (FNDDS)", "SR Legacy", "Branded"]  # Include branded foods
         }
-
+        
         response = requests.get(url, params=params)
         response.raise_for_status()
-
+        
         data = response.json()
         total_hits = data.get("totalHits", 0)
         total_pages = (total_hits + page_size - 1) // page_size
-
+        
         return {
-            "results": [{
-                "fdcId": food["fdcId"],
-                "description": food["description"],
-                "dataType": food.get("dataType", ""),
-                "brandOwner": food.get("brandOwner", "")
-            } for food in data.get("foods", [])],
-            "totalPages":
-            total_pages,
-            "currentPage":
-            page
+            "results": [
+                {
+                    "fdcId": food["fdcId"],
+                    "description": food["description"],
+                    "dataType": food.get("dataType", ""),
+                    "brandOwner": food.get("brandOwner", "")
+                }
+                for food in data.get("foods", [])
+            ],
+            "totalPages": total_pages,
+            "currentPage": page
         }
     except requests.RequestException as e:
         logger.error(f"Error searching foods: {str(e)}")
         return None
-
 
 def get_food_data(food_id: str) -> Optional[Dict]:
     """
@@ -69,11 +65,14 @@ def get_food_data(food_id: str) -> Optional[Dict]:
     """
     try:
         url = f"{BASE_URL}/food/{food_id}"
-        params = {"api_key": API_KEY, "format": "full"}
-
+        params = {
+            "api_key": API_KEY,
+            "format": "full"
+        }
+        
         response = requests.get(url, params=params)
         response.raise_for_status()
-
+        
         return response.json()
     except requests.RequestException as e:
         logger.error(f"Error fetching food data: {str(e)}")
