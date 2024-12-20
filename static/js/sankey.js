@@ -40,8 +40,8 @@ function performSearch(page = 1) {
                     ${food.brandOwner ? `<small class="text-muted">Brand: ${food.brandOwner}</small>` : ''}
                 `;
                 button.addEventListener('click', () => {
-                    // Update buttons
-                    document.querySelectorAll('#foodControls button').forEach(btn => btn.classList.remove('active'));
+                    // Store current food ID
+                    currentFoodId = food.fdcId;
                     
                     // Update Sankey diagram
                     updateSankey(food.fdcId);
@@ -51,6 +51,10 @@ function performSearch(page = 1) {
                     
                     // Clear search input
                     document.getElementById('searchInput').value = '';
+                    
+                    // Update title to show selected food
+                    document.getElementById('sankeyDiagram_graphTitle').innerHTML = 
+                        `<b>Nutrient Breakdown for ${food.description}</b>`;
                 });
                 searchResults.appendChild(button);
             });
@@ -356,20 +360,13 @@ function updateGraphDetails(foodId) {
         `Source: <a href="${usdaLink}" target="_blank">USDA FoodData Central Database</a>`;
 }
 
-// Event listeners for buttons
+// Event listeners for initialization
 document.addEventListener('DOMContentLoaded', () => {
-    const buttons = document.querySelectorAll('#foodControls button');
-    
-    buttons.forEach(button => {
-        button.addEventListener('click', () => {
-            buttons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            updateSankey(button.dataset.foodId);
-        });
-    });
-
-    // Load initial data
-    updateSankey('170208');
+    // Initialize search UI
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.focus();
+    }
 });
 
 // Handle window resize
@@ -378,8 +375,18 @@ window.addEventListener('resize', () => {
     d3.select("#sankeyDiagram_my_dataviz svg")
         .attr("width", width + margin.left + margin.right);
     sankey.extent([[0, 2], [width - 1, height - 5]]);
-    updateSankey(document.querySelector('#foodControls button.active').dataset.foodId);
+    
+    // Only update if we have a current food item being displayed
+    const graphTitle = document.getElementById('sankeyDiagram_graphTitle');
+    if (graphTitle && graphTitle.textContent) {
+        // The diagram will maintain its current data
+        svg.selectAll("*").remove();
+        updateSankey(currentFoodId);
+    }
 });
+
+// Track current food ID
+let currentFoodId = null;
 
 // Function to update the nutrient details text view
 function updateNutrientDetails(data) {
