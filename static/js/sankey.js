@@ -150,22 +150,13 @@ const sankey = d3.sankey()
     .nodePadding(17)
     .extent([[0, 2], [width - 1, height - 5]]);
 
-// Create SVG container only when needed
-let svg;
-function initializeSVG() {
-    // Clear existing content
-    d3.select("#sankeyDiagram_my_dataviz").selectAll("*").remove();
-    
-    // Create new SVG
-    svg = d3.select("#sankeyDiagram_my_dataviz")
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
-    
-    return svg;
-}
+// Append the svg object to the body of the page
+var sankeySVG = d3.select("#sankeyDiagram_my_dataviz")
+    .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 /*
   ===============
@@ -173,10 +164,9 @@ function initializeSVG() {
   ===============
   */
   function highlightNode(event, d) {
-    const allLinks = svg.selectAll(".link");
-    const allNodes = svg.selectAll(".node rect");
-    const allTexts = svg.selectAll(".node text");
-    const allLabels = svg.selectAll(".node-label");
+    const allLinks = sankeySVG.selectAll(".link");
+    const allNodes = sankeySVG.selectAll(".node rect");
+    const allTexts = sankeySVG.selectAll(".node text");  // Select all text elements of nodes
 
     if (event.type === "mouseover") {
         let highlightedNodes = new Set([d]); // Start with the current node
@@ -213,24 +203,13 @@ function initializeSVG() {
         highlightParents(d);
 
         // Set opacity for all links and nodes based on whether they are highlighted
-        allLinks
-            .style("stroke-opacity", link => highlightedLinks.has(link) ? 0.8 : 0.05)
-            .style("transition", "stroke-opacity 0.3s ease");
-            
-        allNodes
-            .style("opacity", node => highlightedNodes.has(node) ? 1 : 0.05)
-            .style("transition", "opacity 0.3s ease");
-            
-        allTexts
-            .style("opacity", text => {
-                const nodeData = d3.select(text.parentNode).datum();
-                return highlightedNodes.has(nodeData) ? 1 : 0.1;
-            })
-            .style("transition", "opacity 0.3s ease");
+        allLinks.style("stroke-opacity", link => highlightedLinks.has(link) ? 0.8 : 0.05);
+        allNodes.style("opacity", node => highlightedNodes.has(node) ? 1 : 0.05);
+        allTexts.style("opacity", text => highlightedNodes.has(text) ? 1 : 0.1);  // Adjust opacity of text elements
 
     } else if (event.type === "mouseout") {
         // Reset opacities to normal
-        allLinks.style("stroke-opacity", 0.2);
+        allLinks.style("stroke-opacity", 0.9);
         allNodes.style("opacity", 1);
         allTexts.style("opacity", 1);  // Reset text opacity
     }
