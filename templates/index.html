@@ -3,62 +3,44 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Food Nutrition Explorer</title>
+    <title>Food Nutrition Sankey Diagram</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="/static/css/styles.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container-fluid my-4">
-        <h1 class="text-center mb-4">Food Nutrition Explorer</h1>
-        
+    <div class="container my-4">
         <div class="row">
-            <!-- USDA Database Search -->
-            <div class="col-md-6">
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h3 class="card-title">USDA Database</h3>
+            <div class="col-12">
+                <h1 class="text-center mb-4">Food Nutrition Breakdown</h1>
+                <div class="mb-4">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search for foods (e.g., beef, chicken, fish)">
+                        <button class="btn btn-primary" type="button" id="searchButton">Search</button>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-4">
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="usdaSearchInput" placeholder="Search USDA database...">
-                                <button class="btn btn-primary" type="button" id="usdaSearchButton">Search</button>
-                            </div>
-                            <div id="usdaSearchResults" class="list-group mt-3" style="display: none;"></div>
-                        </div>
-                        <div class="choropleth_graphic_area">
-                            <h4 id="usdaSankeyTitle" class="text-center mb-3"></h4>
-                            <p id="usdaSankeySubhead" class="text-center mb-4"></p>
-                            <div id="usdaSankeyTooltip" class="sankey-tooltip"></div>
-                            <div id="usdaSankeyDiagram"></div>
-                            <div id="usdaSankeySource" class="text-center mt-3">
-                                Source: <a href="https://fdc.nal.usda.gov/">USDA FoodData Database</a>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="searchResults" class="list-group mb-3" style="display: none;"></div>
                 </div>
-            </div>
-            
-            <!-- OpenFoodFacts Database Search -->
-            <div class="col-md-6">
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h3 class="card-title">Open Food Facts Database</h3>
+                <div class="choropleth_graphic_area">
+                    <h4 id="sankeyDiagram_graphTitle" class="text-center mb-3"></h4>
+                    <p id="sankeyDiagram_graphSubhead" class="text-center mb-4"></p>
+                    <div id="sankeyTooltip"></div>
+                    <div id="sankeyDiagram_my_dataviz"></div>
+                    <div id="sankeyDiagram_graphSource" class="text-center mt-3">
+                        Source: <a href="https://fdc.nal.usda.gov/">USDA FoodData Database</a>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-4">
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="offSearchInput" placeholder="Search Open Food Facts...">
-                                <button class="btn btn-primary" type="button" id="offSearchButton">Search</button>
+                    <div id="nutrientDetails" class="mt-4">
+                        <h5 class="text-center mb-3">Detailed Nutrient Breakdown</h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h6>Macronutrients</h6>
+                                <div id="macroNutrients"></div>
                             </div>
-                            <div id="offSearchResults" class="list-group mt-3" style="display: none;"></div>
-                        </div>
-                        <div class="choropleth_graphic_area">
-                            <h4 id="offDetailsTitle" class="text-center mb-3"></h4>
-                            <div id="offFoodDetails" class="food-details">
-                                <div class="text-center">
-                                    <p class="text-muted">Select a food item to view details</p>
-                                </div>
+                            <div class="col-md-4">
+                                <h6>Fat Breakdown</h6>
+                                <div id="fatBreakdown"></div>
+                            </div>
+                            <div class="col-md-4">
+                                <h6>Additional Information</h6>
+                                <div id="additionalInfo"></div>
                             </div>
                         </div>
                     </div>
@@ -69,7 +51,6 @@
 
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
-    <script src="/static/js/usda_sankey.js"></script>
-    <script src="/static/js/off_search.js"></script>
+    <script src="/static/js/sankey.js"></script>
 </body>
 </html>
