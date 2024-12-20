@@ -20,7 +20,7 @@ def search_food():
     try:
         query = request.args.get('q', '')
         page = int(request.args.get('page', 1))
-        page_size = int(request.args.get('pageSize', 10))
+        page_size = int(request.args.get('pageSize', 20))
         
         if not query:
             return jsonify({"error": "Query parameter 'q' is required"}), 400
