@@ -7,7 +7,7 @@ document.getElementById('searchInput').addEventListener('keypress', function(e) 
     }
 });
 
-function performSearch(page = 1) {
+function performSearch() {
     const query = document.getElementById('searchInput').value.trim();
     if (!query) return;
 
@@ -15,7 +15,7 @@ function performSearch(page = 1) {
     searchResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
     searchResults.style.display = 'block';
 
-    fetch(`/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=10`)
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -28,7 +28,6 @@ function performSearch(page = 1) {
                 return;
             }
 
-            // Add search results
             data.results.forEach(food => {
                 const button = document.createElement('button');
                 button.className = 'list-group-item list-group-item-action';
@@ -40,56 +39,20 @@ function performSearch(page = 1) {
                     ${food.brandOwner ? `<small class="text-muted">Brand: ${food.brandOwner}</small>` : ''}
                 `;
                 button.addEventListener('click', () => {
-                    // Store current food ID
-                    currentFoodId = food.fdcId;
-                    
                     // Update Sankey diagram
                     updateSankey(food.fdcId);
+                    
+                    // Update graph details with food description
+                    updateGraphDetails(food.fdcId, food.description);
                     
                     // Hide search results
                     searchResults.style.display = 'none';
                     
                     // Clear search input
                     document.getElementById('searchInput').value = '';
-                    
-                    // Update title to show selected food
-                    document.getElementById('sankeyDiagram_graphTitle').innerHTML = 
-                        `<b>Nutrient Breakdown for ${food.description}</b>`;
                 });
                 searchResults.appendChild(button);
             });
-
-            // Add pagination controls if there are multiple pages
-            if (data.totalPages > 1) {
-                const paginationDiv = document.createElement('div');
-                paginationDiv.className = 'pagination justify-content-center mt-3';
-                
-                // Previous page button
-                if (data.currentPage > 1) {
-                    const prevButton = document.createElement('button');
-                    prevButton.className = 'btn btn-outline-secondary me-2';
-                    prevButton.textContent = 'Previous';
-                    prevButton.onclick = () => performSearch(data.currentPage - 1);
-                    paginationDiv.appendChild(prevButton);
-                }
-                
-                // Current page indicator
-                const pageInfo = document.createElement('span');
-                pageInfo.className = 'mx-2 align-self-center';
-                pageInfo.textContent = `Page ${data.currentPage} of ${data.totalPages}`;
-                paginationDiv.appendChild(pageInfo);
-                
-                // Next page button
-                if (data.currentPage < data.totalPages) {
-                    const nextButton = document.createElement('button');
-                    nextButton.className = 'btn btn-outline-secondary ms-2';
-                    nextButton.textContent = 'Next';
-                    nextButton.onclick = () => performSearch(data.currentPage + 1);
-                    paginationDiv.appendChild(nextButton);
-                }
-                
-                searchResults.appendChild(paginationDiv);
-            }
         })
         .catch(error => {
             searchResults.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
@@ -109,10 +72,10 @@ const nodeColor = {
     "Fatty Acids": "#CE944D",
     "Glycerol": "#FF4500",
     "Other Fats": "#CE944D",
-    "Carbs": "#ff9999",
-    "Sugars": "#ff9999",
-    "Fiber": "#ff9999",
-    "Starch": "#ff9999",
+    "Carbs": "#c70000",
+    "Sugars": "#c70000",
+    "Fiber": "#c70000",
+    "Starch": "#c70000",
     "Nutr./Mins.": "#0000ff",
 };
 
@@ -150,13 +113,13 @@ const sankey = d3.sankey()
     .nodePadding(17)
     .extent([[0, 2], [width - 1, height - 5]]);
 
-// Append the svg object to the body of the page
-var sankeySVG = d3.select("#sankeyDiagram_my_dataviz")
+// Create SVG container
+const svg = d3.select("#sankeyDiagram_my_dataviz")
     .append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    .attr("transform", `translate(${margin.left},${margin.top})`);
 
 /*
   ===============
@@ -164,9 +127,10 @@ var sankeySVG = d3.select("#sankeyDiagram_my_dataviz")
   ===============
   */
   function highlightNode(event, d) {
-    const allLinks = sankeySVG.selectAll(".link");
-    const allNodes = sankeySVG.selectAll(".node rect");
-    const allTexts = sankeySVG.selectAll(".node text");  // Select all text elements of nodes
+    const allLinks = svg.selectAll(".link");
+    const allNodes = svg.selectAll(".node rect");
+    const allTexts = svg.selectAll(".node text");
+    const allLabels = svg.selectAll(".node-label");
 
     if (event.type === "mouseover") {
         let highlightedNodes = new Set([d]); // Start with the current node
@@ -203,13 +167,21 @@ var sankeySVG = d3.select("#sankeyDiagram_my_dataviz")
         highlightParents(d);
 
         // Set opacity for all links and nodes based on whether they are highlighted
-        allLinks.style("stroke-opacity", link => highlightedLinks.has(link) ? 0.8 : 0.05);
-        allNodes.style("opacity", node => highlightedNodes.has(node) ? 1 : 0.05);
-        allTexts.style("opacity", text => highlightedNodes.has(text) ? 1 : 0.1);  // Adjust opacity of text elements
+        allLinks
+            .style("stroke-opacity", link => highlightedLinks.has(link) ? 0.8 : 0.05)
+            .style("transition", "stroke-opacity 0.3s ease");
+            
+        allNodes
+            .style("opacity", node => highlightedNodes.has(node) ? 1 : 0.05)
+            .style("transition", "opacity 0.3s ease");
+            
+        allTexts
+            .style("opacity", text => highlightedNodes.has(text.parentNode.__data__) ? 1 : 0.1)
+            .style("transition", "opacity 0.3s ease");
 
     } else if (event.type === "mouseout") {
         // Reset opacities to normal
-        allLinks.style("stroke-opacity", 0.9);
+        allLinks.style("stroke-opacity", 0.2);
         allNodes.style("opacity", 1);
         allTexts.style("opacity", 1);  // Reset text opacity
     }
@@ -291,8 +263,7 @@ async function updateSankey(foodId) {
             .text(d => d.name)
             .style("fill", "#333");
 
-        // Update title and subhead
-        updateGraphDetails(foodId);
+        // Update title and subhead will be handled by the click handler
 
     } catch (error) {
         console.error('Error updating Sankey diagram:', error);
@@ -326,21 +297,13 @@ function hideTooltip() {
 }
 
 // Update graph details
-function updateGraphDetails(foodId) {
-    const titles = {
-        "170208": {
-            title: "What nutrients make up RAW BEEF?",
-            subhead: "Nutrient breakdown per 100g serving"
-        },
-        "170386": {
-            title: "What nutrients make up COOKED BEEF?",
-            subhead: "Nutrient breakdown per 100g serving"
-        }
-    };
+function updateGraphDetails(foodId, foodDescription) {
+    // Create title from food description
+    const title = `What nutrients make up ${foodDescription.toUpperCase()}?`;
+    const subhead = "Nutrient breakdown per 100g serving";
 
-    const details = titles[foodId];
-    document.getElementById("sankeyDiagram_graphTitle").innerHTML = `<b>${details.title}</b>`;
-    document.getElementById("sankeyDiagram_graphSubhead").textContent = details.subhead;
+    document.getElementById("sankeyDiagram_graphTitle").innerHTML = `<b>${title}</b>`;
+    document.getElementById("sankeyDiagram_graphSubhead").textContent = subhead;
     
     // Update source link with direct USDA food data link
     const usdaLink = `https://fdc.nal.usda.gov/fdc-app.html#/food-details/${foodId}/nutrients`;
@@ -348,13 +311,20 @@ function updateGraphDetails(foodId) {
         `Source: <a href="${usdaLink}" target="_blank">USDA FoodData Central Database</a>`;
 }
 
-// Event listeners for initialization
+// Event listeners for buttons
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize search UI
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.focus();
-    }
+    const buttons = document.querySelectorAll('#foodControls button');
+    
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            buttons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+            updateSankey(button.dataset.foodId);
+        });
+    });
+
+    // Load initial data
+    updateSankey('170208');
 });
 
 // Handle window resize
@@ -363,18 +333,8 @@ window.addEventListener('resize', () => {
     d3.select("#sankeyDiagram_my_dataviz svg")
         .attr("width", width + margin.left + margin.right);
     sankey.extent([[0, 2], [width - 1, height - 5]]);
-    
-    // Only update if we have a current food item being displayed
-    const graphTitle = document.getElementById('sankeyDiagram_graphTitle');
-    if (graphTitle && graphTitle.textContent) {
-        // The diagram will maintain its current data
-        svg.selectAll("*").remove();
-        updateSankey(currentFoodId);
-    }
+    updateSankey(document.querySelector('#foodControls button.active').dataset.foodId);
 });
-
-// Track current food ID
-let currentFoodId = null;
 
 // Function to update the nutrient details text view
 function updateNutrientDetails(data) {
