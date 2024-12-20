@@ -10,9 +10,20 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_URL = "https://api.nal.usda.gov/fdc/v1"
 API_KEY = os.environ.get("USDA_API_KEY", "DEMO_KEY")
 
-def search_foods(query: str, page_size: int = 10) -> Optional[List[Dict]]:
+def search_foods(query: str, page_size: int = 20, page: int = 1) -> Optional[Dict]:
     """
-    Search for foods in USDA FoodData API
+    Search for foods in USDA FoodData API with pagination support
+    
+    Args:
+        query: Search term
+        page_size: Number of results per page
+        page: Page number (1-based)
+        
+    Returns:
+        Dictionary containing:
+        - results: List of food items
+        - totalPages: Total number of pages
+        - currentPage: Current page number
     """
     try:
         url = f"{BASE_URL}/foods/search"
@@ -20,22 +31,30 @@ def search_foods(query: str, page_size: int = 10) -> Optional[List[Dict]]:
             "api_key": API_KEY,
             "query": query,
             "pageSize": page_size,
-            "dataType": ["Survey (FNDDS)", "SR Legacy"]  # Focus on standard reference data
+            "pageNumber": page,
+            "dataType": ["Survey (FNDDS)", "SR Legacy", "Branded"]  # Include branded foods
         }
         
         response = requests.get(url, params=params)
         response.raise_for_status()
         
         data = response.json()
-        return [
-            {
-                "fdcId": food["fdcId"],
-                "description": food["description"],
-                "dataType": food.get("dataType", ""),
-                "brandOwner": food.get("brandOwner", "")
-            }
-            for food in data.get("foods", [])
-        ]
+        total_hits = data.get("totalHits", 0)
+        total_pages = (total_hits + page_size - 1) // page_size
+        
+        return {
+            "results": [
+                {
+                    "fdcId": food["fdcId"],
+                    "description": food["description"],
+                    "dataType": food.get("dataType", ""),
+                    "brandOwner": food.get("brandOwner", "")
+                }
+                for food in data.get("foods", [])
+            ],
+            "totalPages": total_pages,
+            "currentPage": page
+        }
     except requests.RequestException as e:
         logger.error(f"Error searching foods: {str(e)}")
         return None

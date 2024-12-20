@@ -19,14 +19,17 @@ def index():
 def search_food():
     try:
         query = request.args.get('q', '')
+        page = int(request.args.get('page', 1))
+        page_size = int(request.args.get('pageSize', 20))
+        
         if not query:
             return jsonify({"error": "Query parameter 'q' is required"}), 400
             
-        results = search_foods(query)
-        if results is None:
+        search_result = search_foods(query, page_size=page_size, page=page)
+        if search_result is None:
             return jsonify({"error": "Failed to search foods"}), 500
             
-        return jsonify({"results": results})
+        return jsonify(search_result)
     except Exception as e:
         logger.error(f"Error searching foods: {str(e)}")
         return jsonify({"error": "Failed to search foods"}), 500

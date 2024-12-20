@@ -7,7 +7,7 @@ document.getElementById('searchInput').addEventListener('keypress', function(e) 
     }
 });
 
-function performSearch() {
+function performSearch(page = 1) {
     const query = document.getElementById('searchInput').value.trim();
     if (!query) return;
 
@@ -15,7 +15,7 @@ function performSearch() {
     searchResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
     searchResults.style.display = 'block';
 
-    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+    fetch(`/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=20`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -28,6 +28,7 @@ function performSearch() {
                 return;
             }
 
+            // Add search results
             data.results.forEach(food => {
                 const button = document.createElement('button');
                 button.className = 'list-group-item list-group-item-action';
@@ -53,6 +54,38 @@ function performSearch() {
                 });
                 searchResults.appendChild(button);
             });
+
+            // Add pagination controls if there are multiple pages
+            if (data.totalPages > 1) {
+                const paginationDiv = document.createElement('div');
+                paginationDiv.className = 'pagination justify-content-center mt-3';
+                
+                // Previous page button
+                if (data.currentPage > 1) {
+                    const prevButton = document.createElement('button');
+                    prevButton.className = 'btn btn-outline-secondary me-2';
+                    prevButton.textContent = 'Previous';
+                    prevButton.onclick = () => performSearch(data.currentPage - 1);
+                    paginationDiv.appendChild(prevButton);
+                }
+                
+                // Current page indicator
+                const pageInfo = document.createElement('span');
+                pageInfo.className = 'mx-2 align-self-center';
+                pageInfo.textContent = `Page ${data.currentPage} of ${data.totalPages}`;
+                paginationDiv.appendChild(pageInfo);
+                
+                // Next page button
+                if (data.currentPage < data.totalPages) {
+                    const nextButton = document.createElement('button');
+                    nextButton.className = 'btn btn-outline-secondary ms-2';
+                    nextButton.textContent = 'Next';
+                    nextButton.onclick = () => performSearch(data.currentPage + 1);
+                    paginationDiv.appendChild(nextButton);
+                }
+                
+                searchResults.appendChild(paginationDiv);
+            }
         })
         .catch(error => {
             searchResults.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
@@ -69,33 +102,37 @@ const nodeColor = {
     "Sat.": "#CE944D",
     "Mono": "#CE944D",
     "Poly": "#CE944D",
-    "Fatty Acids": "#FFD700",
+    "Fatty Acids": "#CE944D",
     "Glycerol": "#FF4500",
-    "Other Fats": "#FF4500",
-    "Carbs": "#ffcdd2",
-    "Sugars": "#ffcdd2",
-    "Fiber": "#ffcdd2",
-    "Starch": "#ffcdd2",
+    "Other Fats": "#CE944D",
+    "Carbs": "#c70000",
+    "Sugars": "#c70000",
+    "Fiber": "#c70000",
+    "Starch": "#c70000",
     "Nutr./Mins.": "#0000ff",
 };
 
 const linkColor = {
-    "Total-Water": "#9CBBC8",
+    "Total-Water": "#658394",
     "Total-Protein": "#67B080",
+    "Total-Carbs": "#c70000",
     "Total-Fat": "#FFA500",
     "Total-Nutr./Mins.": "#9386A4",
     "Protein-Amino Acids": "#67B080",
     "Protein-Waste": "#875B27",
-    "Fat-Mono": "#FBBD69",
-    "Fat-Sat.": "#FBBD69",
-    "Fat-Poly": "#FBBD69",
-    "Mono-Fatty Acids": "#EAC542",
-    "Sat.-Fatty Acids": "#EAC542",
-    "Poly-Fatty Acids": "#EAC542",
+    "Fat-Mono": "#FFA500",
+    "Fat-Sat.": "#FFA500",
+    "Fat-Poly": "#FFA500",
+    "Mono-Fatty Acids": "#FFA500",
+    "Sat.-Fatty Acids": "#FFA500",
+    "Poly-Fatty Acids": "#FFA500",
     "Mono-Glycerol": "#FF4500",
     "Poly-Glycerol": "#FF4500",
     "Sat.-Glycerol": "#FF4500",
-    "Fat-Other Fats": "#F27648"
+    "Fat-Other Fats": "#FFA500", 
+    "Carbs-Starch": "#c70000", 
+    "Carbs-Sugars": "#c70000", 
+     "Carbs-Fiber": "#c70000"
 };
 
 // Set up dimensions and margins
