@@ -1,6 +1,19 @@
 // Define color schemes
 // Search functionality
 document.getElementById('searchButton').addEventListener('click', performSearch);
+// Add click outside behavior
+document.addEventListener('click', function(event) {
+    const searchResults = document.getElementById('searchResults');
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    
+    // If clicking outside of search area and results, close the results
+    if (!searchResults.contains(event.target) && 
+        event.target !== searchInput && 
+        event.target !== searchButton) {
+        searchResults.style.display = 'none';
+    }
+});
 document.getElementById('searchInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         performSearch();
@@ -15,7 +28,7 @@ function performSearch(page = 1) {
     searchResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
     searchResults.style.display = 'block';
 
-    fetch(`/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=20`)
+    fetch(`/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=10`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {

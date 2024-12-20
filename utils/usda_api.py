@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_URL = "https://api.nal.usda.gov/fdc/v1"
 API_KEY = os.environ.get("USDA_API_KEY", "DEMO_KEY")
 
-def search_foods(query: str, page_size: int = 20, page: int = 1) -> Optional[Dict]:
+def search_foods(query: str, page_size: int = 10, page: int = 1) -> Optional[Dict]:
     """
     Search for foods in USDA FoodData API with pagination support
     
