@@ -15,7 +15,7 @@ function performSearch(page = 1) {
     searchResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
     searchResults.style.display = 'block';
 
-    fetch(`/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=20`)
+    fetch(`/api/search?q=${encodeURIComponent(query)}&page=${page}&pageSize=10`)
         .then(response => response.json())
         .then(data => {
             if (data.error) {
@@ -209,7 +209,10 @@ const svg = d3.select("#sankeyDiagram_my_dataviz")
             .style("transition", "opacity 0.3s ease");
             
         allTexts
-            .style("opacity", text => highlightedNodes.has(text.parentNode.__data__) ? 1 : 0.1)
+            .style("opacity", text => {
+                const nodeData = d3.select(text.parentNode).datum();
+                return highlightedNodes.has(nodeData) ? 1 : 0.1;
+            })
             .style("transition", "opacity 0.3s ease");
 
     } else if (event.type === "mouseout") {
