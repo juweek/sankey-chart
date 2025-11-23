@@ -7,16 +7,26 @@ document.getElementById('searchInput').addEventListener('keypress', function(e) 
     }
 });
 
-function performSearch() {
-    const query = document.getElementById('searchInput').value.trim();
+let lastSearchQuery = '';
+
+function performSearch(queryParam) {
+    const query = (typeof queryParam === 'string' ? queryParam : document.getElementById('searchInput').value.trim());
     if (!query) return;
+    lastSearchQuery = query;
 
     const searchResults = document.getElementById('searchResults');
     searchResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
     searchResults.style.display = 'block';
 
     fetch(`/api/search?q=${encodeURIComponent(query)}`)
-        .then(response => response.json())
+        .then(async response => {
+            if (!response.ok) {
+                const err = await response.json().catch(() => ({}));
+                const msg = err.error || `Search failed (HTTP ${response.status})`;
+                throw new Error(msg);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.error) {
                 throw new Error(data.error);
@@ -39,6 +49,9 @@ function performSearch() {
                     ${food.brandOwner ? `<small class="text-muted">Brand: ${food.brandOwner}</small>` : ''}
                 `;
                 button.addEventListener('click', () => {
+                    // Remember the current selection
+                    currentFoodId = food.fdcId;
+
                     // Update Sankey diagram
                     updateSankey(food.fdcId);
                     
@@ -56,6 +69,7 @@ function performSearch() {
         })
         .catch(error => {
             searchResults.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            showToast(error.message, () => performSearch(lastSearchQuery));
         });
 }
 
@@ -106,6 +120,9 @@ const linkColor = {
 const margin = { top: 30, right: 10, bottom: 30, left: 10 };
 let width = document.getElementById('sankeyDiagram_my_dataviz').clientWidth - margin.left - margin.right;
 let height = 450 - margin.top - margin.bottom;
+
+// Track the currently selected food id for safe re-renders
+let currentFoodId = null;
 
 // Initialize the Sankey diagram
 const sankey = d3.sankey()
@@ -176,7 +193,10 @@ const svg = d3.select("#sankeyDiagram_my_dataviz")
             .style("transition", "opacity 0.3s ease");
             
         allTexts
-            .style("opacity", text => highlightedNodes.has(text.parentNode.__data__) ? 1 : 0.1)
+            .style("opacity", function() {
+                const bound = this.parentNode && this.parentNode.__data__;
+                return highlightedNodes.has(bound) ? 1 : 0.1;
+            })
             .style("transition", "opacity 0.3s ease");
 
     } else if (event.type === "mouseout") {
@@ -191,13 +211,21 @@ const svg = d3.select("#sankeyDiagram_my_dataviz")
 async function updateSankey(foodId) {
     try {
         // Show loading state
+        d3.select("#sankeyDiagram_my_dataviz").selectAll(".loading").remove();
         d3.select("#sankeyDiagram_my_dataviz").append("div")
             .attr("class", "loading")
             .text("Loading...");
 
         // Fetch data from our Flask API
         const response = await fetch(`/api/food/${foodId}`);
-        if (!response.ok) throw new Error('Failed to fetch data');
+        if (!response.ok) {
+            let message = `Failed to fetch data (HTTP ${response.status})`;
+            try {
+                const body = await response.json();
+                if (body && body.error) message = body.error;
+            } catch (e) {}
+            throw new Error(message);
+        }
         const data = await response.json();
 
         // Remove loading state
@@ -268,8 +296,62 @@ async function updateSankey(foodId) {
     } catch (error) {
         console.error('Error updating Sankey diagram:', error);
         // Show error message to user
-        d3.select(".loading").text("Error loading data. Please try again.");
+        d3.select(".loading").remove();
+        d3.select("#sankeyDiagram_my_dataviz").append("div")
+            .attr("class", "alert alert-danger")
+            .text(String(error.message || error));
+        // Offer retry toast
+        showToast(String(error.message || 'Failed to load data'), () => {
+            if (currentFoodId) updateSankey(currentFoodId);
+        });
     }
+}
+
+// Toast helper
+function showToast(message, retryFn) {
+    const container = document.getElementById('toastContainer') || (function() {
+        const c = document.createElement('div');
+        c.id = 'toastContainer';
+        c.className = 'toast-container';
+        document.body.appendChild(c);
+        return c;
+    })();
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+        <div class="toast-title">Request failed</div>
+        <div class="toast-body">${escapeHtml(message)}</div>
+        <div class="toast-actions">
+            ${retryFn ? '<button class="retry-btn">Retry</button>' : ''}
+            <button class="secondary close-btn">Dismiss</button>
+        </div>
+    `;
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+
+    function cleanup() {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 180);
+    }
+    const closeBtn = toast.querySelector('.close-btn');
+    if (closeBtn) closeBtn.addEventListener('click', cleanup);
+    const retryBtn = toast.querySelector('.retry-btn');
+    if (retryBtn && typeof retryFn === 'function') {
+        retryBtn.addEventListener('click', () => {
+            cleanup();
+            retryFn();
+        });
+    }
+    setTimeout(cleanup, 6000);
+}
+
+function escapeHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
 
 // Tooltip functions
@@ -311,21 +393,7 @@ function updateGraphDetails(foodId, foodDescription) {
         `Source: <a href="${usdaLink}" target="_blank">USDA FoodData Central Database</a>`;
 }
 
-// Event listeners for buttons
-document.addEventListener('DOMContentLoaded', () => {
-    const buttons = document.querySelectorAll('#foodControls button');
-    
-    buttons.forEach(button => {
-        button.addEventListener('click', () => {
-            buttons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
-            updateSankey(button.dataset.foodId);
-        });
-    });
-
-    // Load initial data
-    updateSankey('170208');
-});
+// No default button controls on this page; search triggers rendering
 
 // Handle window resize
 window.addEventListener('resize', () => {
@@ -333,7 +401,10 @@ window.addEventListener('resize', () => {
     d3.select("#sankeyDiagram_my_dataviz svg")
         .attr("width", width + margin.left + margin.right);
     sankey.extent([[0, 2], [width - 1, height - 5]]);
-    updateSankey(document.querySelector('#foodControls button.active').dataset.foodId);
+    // Only re-render if we have a current selection
+    if (currentFoodId) {
+        updateSankey(currentFoodId);
+    }
 });
 
 // Function to update the nutrient details text view
