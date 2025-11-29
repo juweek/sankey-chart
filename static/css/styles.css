@@ -115,3 +115,59 @@
 .toast button.secondary {
     background: #4b5563;
 }
+
+/* Mobile responsive styles */
+@media (max-width: 768px) {
+    .choropleth_graphic_area {
+        padding: 10px;
+        margin: 5px 0;
+    }
+    
+    .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+    
+    /* Smaller font for chart labels on mobile */
+    .node text {
+        font-size: 11px;
+    }
+    
+    #sankeyTooltip {
+        font-size: 12px;
+        max-width: 150px;
+        padding: 8px;
+    }
+    
+    /* Adjust title/subhead sizing */
+    #sankeyDiagram_graphTitle {
+        font-size: 1rem;
+    }
+    
+    #sankeyDiagram_graphSubhead {
+        font-size: 0.85rem;
+    }
+    
+    /* Smaller controls on mobile */
+    .btn-group-sm .btn {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .form-check-label {
+        font-size: 0.85rem;
+    }
+    
+    /* Nutrient details smaller on mobile */
+    #nutrientDetails h5 {
+        font-size: 1rem;
+    }
+    
+    #nutrientDetails h6 {
+        font-size: 0.9rem;
+    }
+    
+    #nutrientDetails ul {
+        font-size: 0.85rem;
+    }
+}

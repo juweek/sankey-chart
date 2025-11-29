@@ -24,13 +24,16 @@ def search_food():
         query = request.args.get('q', '')
         page = int(request.args.get('page', 1))
         page_size = int(request.args.get('pageSize', 10))
-        logger.info(f"[{request_id}] /api/search start query='{query}' page={page} pageSize={page_size}")
+        # Parse data types filter (comma-separated)
+        data_types_param = request.args.get('dataTypes', '')
+        data_types = [dt.strip() for dt in data_types_param.split(',') if dt.strip()] if data_types_param else None
+        logger.info(f"[{request_id}] /api/search start query='{query}' page={page} pageSize={page_size} dataTypes={data_types}")
         
         if not query:
             return jsonify({"error": "Query parameter 'q' is required", "requestId": request_id}), 400
             
         t0 = time.time()
-        search_result = search_foods(query, page_size=page_size, page=page, request_id=request_id)
+        search_result = search_foods(query, page_size=page_size, page=page, request_id=request_id, data_types=data_types)
         elapsed = (time.time() - t0) * 1000.0
         if isinstance(search_result, dict) and "error" in search_result:
             # Propagate upstream error status if available
@@ -51,7 +54,9 @@ def search_food():
 def get_food_nutrients(food_id):
     try:
         request_id = uuid.uuid4().hex
-        logger.info(f"[{request_id}] /api/food start id={food_id}")
+        # Check for reverse hierarchy mode
+        reverse_hierarchy = request.args.get('reverseHierarchy', 'false').lower() == 'true'
+        logger.info(f"[{request_id}] /api/food start id={food_id} reverseHierarchy={reverse_hierarchy}")
         # Fetch data from USDA API
         t0 = time.time()
         food_data = get_food_data(food_id, request_id=request_id)
@@ -65,7 +70,7 @@ def get_food_nutrients(food_id):
             return jsonify(body), status if status in (404, 429, 500, 502, 503) else 502
         
         # Transform data for Sankey diagram
-        sankey_data = transform_to_sankey(food_data)
+        sankey_data = transform_to_sankey(food_data, reverse_hierarchy=reverse_hierarchy)
         logger.info(f"[{request_id}] /api/food success id={food_id} nodes={len(sankey_data.get('nodes', []))} links={len(sankey_data.get('links', []))} elapsedMs={elapsed:.1f}")
         return jsonify(sankey_data)
     except Exception as e:

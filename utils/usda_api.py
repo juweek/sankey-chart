@@ -69,7 +69,7 @@ def _request_with_retries(
     # No exception but never returned a response (should not happen)
     raise requests.RequestException(f"Failed to get a successful response after {MAX_RETRIES} attempts for {url}")
 
-def search_foods(query: str, page_size: int = 10, page: int = 1, *, request_id: Optional[str] = None) -> Dict:
+def search_foods(query: str, page_size: int = 10, page: int = 1, *, request_id: Optional[str] = None, data_types: Optional[List[str]] = None) -> Dict:
     """
     Search for foods in USDA FoodData API with pagination support
     
@@ -77,6 +77,7 @@ def search_foods(query: str, page_size: int = 10, page: int = 1, *, request_id: 
         query: Search term
         page_size: Number of results per page
         page: Page number (1-based)
+        data_types: List of USDA data types to include (e.g., ["Branded", "SR Legacy", "Survey (FNDDS)", "Foundation"])
         
     Returns:
         On success, a dictionary containing:
@@ -89,12 +90,15 @@ def search_foods(query: str, page_size: int = 10, page: int = 1, *, request_id: 
     """
     try:
         url = f"{BASE_URL}/foods/search"
+        # Default data types if none specified
+        if not data_types:
+            data_types = ["Survey (FNDDS)", "SR Legacy", "Branded", "Foundation"]
         params = {
             "api_key": API_KEY,
             "query": query,
             "pageSize": page_size,
             "pageNumber": page,
-            "dataType": ["Survey (FNDDS)", "SR Legacy", "Branded"]  # Include branded foods
+            "dataType": data_types
         }
         
         response = _request_with_retries("GET", url, params=params, allow_404_retry=True, request_id=request_id)

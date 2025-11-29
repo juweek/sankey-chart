@@ -9,6 +9,24 @@ document.getElementById('searchInput').addEventListener('keypress', function(e) 
 
 let lastSearchQuery = '';
 
+// Get selected data types from checkboxes
+function getSelectedDataTypes() {
+    const types = [];
+    const checkboxes = [
+        { id: 'dtBranded', value: 'Branded' },
+        { id: 'dtSRLegacy', value: 'SR Legacy' },
+        { id: 'dtFNDDS', value: 'Survey (FNDDS)' },
+        { id: 'dtFoundation', value: 'Foundation' }
+    ];
+    checkboxes.forEach(cb => {
+        const el = document.getElementById(cb.id);
+        if (el && el.checked) {
+            types.push(cb.value);
+        }
+    });
+    return types;
+}
+
 function performSearch(queryParam) {
     const query = (typeof queryParam === 'string' ? queryParam : document.getElementById('searchInput').value.trim());
     if (!query) return;
@@ -18,7 +36,14 @@ function performSearch(queryParam) {
     searchResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
     searchResults.style.display = 'block';
 
-    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+    // Build URL with selected data types
+    const dataTypes = getSelectedDataTypes();
+    let url = `/api/search?q=${encodeURIComponent(query)}`;
+    if (dataTypes.length > 0) {
+        url += '&dataTypes=' + encodeURIComponent(dataTypes.join(','));
+    }
+
+    fetch(url)
         .then(async response => {
             if (!response.ok) {
                 const err = await response.json().catch(() => ({}));
@@ -78,51 +103,78 @@ const nodeColor = {
     "Water": "#658394",
     "Protein": "#54886A",
     "Amino Acids": "#54886A",
-    "Waste": "#875B27",
-    "Fat": "#CE944D",
-    "Sat.": "#CE944D",
-    "Mono": "#CE944D",
-    "Poly": "#CE944D",
-    "Fatty Acids": "#CE944D",
-    "Glycerol": "#FF4500",
-    "Other Fats": "#CE944D",
-    "Carbs": "#c70000",
-    "Sugars": "#c70000",
-    "Fiber": "#c70000",
-    "Starch": "#c70000",
+    "Fat": "#B22222",
+    "Sat.": "#B22222",
+    "Mono": "#B22222",
+    "Poly": "#B22222",
+    "Trans": "#8B0000",
+    "Fatty Acids": "#B22222",
+    "Other Fats": "#B22222",
+    "Carbs": "#CC9A2E",
+    "Sugars": "#CC9A2E",
+    "Fiber": "#CC9A2E",
+    "Starch": "#CC9A2E",
     "Nutr./Mins.": "#0000ff",
 };
 
-const linkColor = {
+// Base link colors - we'll look up both directions
+const linkColorBase = {
     "Total-Water": "#658394",
     "Total-Protein": "#67B080",
-    "Total-Carbs": "#c70000",
-    "Total-Fat": "#FFA500",
+    "Total-Carbs": "#CC9A2E",
+    "Total-Fat": "#B22222",
     "Total-Nutr./Mins.": "#9386A4",
     "Protein-Amino Acids": "#67B080",
-    "Protein-Waste": "#875B27",
-    "Fat-Mono": "#FFA500",
-    "Fat-Sat.": "#FFA500",
-    "Fat-Poly": "#FFA500",
-    "Mono-Fatty Acids": "#FFA500",
-    "Sat.-Fatty Acids": "#FFA500",
-    "Poly-Fatty Acids": "#FFA500",
-    "Mono-Glycerol": "#FF4500",
-    "Poly-Glycerol": "#FF4500",
-    "Sat.-Glycerol": "#FF4500",
-    "Fat-Other Fats": "#FFA500", 
-    "Carbs-Starch": "#c70000", 
-    "Carbs-Sugars": "#c70000", 
-     "Carbs-Fiber": "#c70000"
+    "Fat-Mono": "#B22222",
+    "Fat-Sat.": "#B22222",
+    "Fat-Poly": "#B22222",
+    "Fat-Trans": "#8B0000",
+    "Mono-Fatty Acids": "#B22222",
+    "Sat.-Fatty Acids": "#B22222",
+    "Poly-Fatty Acids": "#B22222",
+    "Trans-Fatty Acids": "#8B0000",
+    "Fat-Other Fats": "#B22222", 
+    "Carbs-Starch": "#CC9A2E", 
+    "Carbs-Sugars": "#CC9A2E", 
+    "Carbs-Fiber": "#CC9A2E",
+    // Reverse hierarchy specific
+    "Total-Amino Acids": "#67B080",
+    "Total-Fatty Acids": "#B22222",
+    "Total-Other Fats": "#B22222",
+    "Total-Sugars": "#CC9A2E",
+    "Total-Fiber": "#CC9A2E",
+    "Total-Starch": "#CC9A2E",
 };
 
-// Set up dimensions and margins
-const margin = { top: 30, right: 10, bottom: 30, left: 10 };
+// Get link color - checks both directions (A-B and B-A)
+function getLinkColor(sourceName, targetName) {
+    const key1 = `${sourceName}-${targetName}`;
+    const key2 = `${targetName}-${sourceName}`;
+    return linkColorBase[key1] || linkColorBase[key2] || "#666363";
+}
+
+// Set up dimensions and margins - adjust for mobile
+const isMobile = window.innerWidth <= 768;
+const margin = { 
+    top: isMobile ? 20 : 30, 
+    right: isMobile ? 100 : 160, 
+    bottom: isMobile ? 20 : 30, 
+    left: isMobile ? 5 : 10 
+};
 let width = document.getElementById('sankeyDiagram_my_dataviz').clientWidth - margin.left - margin.right;
-let height = 450 - margin.top - margin.bottom;
+
+// Different heights for mobile vs desktop
+let chartHeightSmall = isMobile ? 350 : 550;
+let chartHeightMedium = isMobile ? 500 : 1000;
+let chartHeightLarge = isMobile ? 650 : 1100;
+let chartHeightCurrent = chartHeightSmall;
+let height = chartHeightCurrent - margin.top - margin.bottom;
 
 // Track the currently selected food id for safe re-renders
 let currentFoodId = null;
+let showValueLabels = false;
+let reverseFlow = false;
+let reverseHierarchy = false;
 
 // Initialize the Sankey diagram
 const sankey = d3.sankey()
@@ -217,7 +269,8 @@ async function updateSankey(foodId) {
             .text("Loading...");
 
         // Fetch data from our Flask API
-        const response = await fetch(`/api/food/${foodId}`);
+        const url = `/api/food/${foodId}?reverseHierarchy=${reverseHierarchy}`;
+        const response = await fetch(url);
         if (!response.ok) {
             let message = `Failed to fetch data (HTTP ${response.status})`;
             try {
@@ -237,6 +290,15 @@ async function updateSankey(foodId) {
 
         // Generate the Sankey layout
         const { nodes, links } = sankey(data);
+        // Optionally mirror layout horizontally for reverse flow
+        if (reverseFlow) {
+            nodes.forEach(d => {
+                const oldX0 = d.x0;
+                const oldX1 = d.x1;
+                d.x0 = width - oldX1;
+                d.x1 = width - oldX0;
+            });
+        }
 
         // Add links
         svg.append("g")
@@ -246,10 +308,7 @@ async function updateSankey(foodId) {
             .attr("class", "link")
             .attr("d", d3.sankeyLinkHorizontal())
             .attr("stroke-width", d => Math.max(1, d.width))
-            .style("stroke", d => {
-                const linkId = `${d.source.name}-${d.target.name}`;
-                return linkColor[linkId] || "#666363";
-            })
+            .style("stroke", d => getLinkColor(d.source.name, d.target.name))
             .style("stroke-opacity", 0.2)
             .on("mouseover", function(event, d) {
                 showTooltip(event, d);
@@ -283,15 +342,87 @@ async function updateSankey(foodId) {
             });
 
         // Add labels
+        // Determine label placement based on node type, flow direction, and hierarchy mode
+        
+        // Fat subtypes always get labels on the right (they're squeezed in the middle)
+        const fatSubtypes = new Set(["Sat.", "Mono", "Poly", "Trans"]);
+        
         node.append("text")
-            .attr("x", d => d.x0 < width / 2 ? 6 + (d.x1 - d.x0) : -6)
+            .attr("x", d => {
+                const isSource = d.targetLinks.length === 0 && d.sourceLinks.length > 0;
+                const isSink = d.sourceLinks.length === 0 && d.targetLinks.length > 0;
+                const nodeWidth = d.x1 - d.x0;
+                
+                // Detail→Macro + Normal flow: ALL labels on LEFT of bars
+                if (reverseHierarchy && !reverseFlow) {
+                    return -6;  // All labels on left, including fat subtypes
+                }
+                
+                // Fat subtypes: always label on right (they're in a tight middle column)
+                if (fatSubtypes.has(d.name)) {
+                    return nodeWidth + 6;
+                }
+                
+                // Special handling for Fatty Acids in reverse flow
+                if (d.name === "Fatty Acids" && reverseFlow) {
+                    return -6;
+                }
+                
+                if (reverseFlow) {
+                    // Reverse flow: chart is mirrored
+                    // Sources appear on right, sinks on left
+                    if (isSource) return nodeWidth + 6;  // label to right
+                    if (isSink) return -6;               // label to left
+                    // Middle nodes: based on position
+                    const nodeCenter = (d.x0 + d.x1) / 2;
+                    return nodeCenter > width / 2 ? nodeWidth + 6 : -6;
+                } else {
+                    // Normal flow + Normal hierarchy: sources on left, sinks on right
+                    if (isSource) return nodeWidth + 6;  // label to right of source
+                    if (isSink) return nodeWidth + 6;    // label to right of sink
+                    // Middle nodes: based on position
+                    const nodeCenter = (d.x0 + d.x1) / 2;
+                    return nodeCenter < width / 2 ? nodeWidth + 6 : -6;
+                }
+            })
             .attr("y", d => (d.y1 - d.y0) / 2)
             .attr("dy", "0.35em")
-            .attr("text-anchor", d => d.x0 < width / 2 ? "start" : "end")
-            .text(d => d.name)
-            .style("fill", "#333");
+            .attr("text-anchor", d => {
+                const isSource = d.targetLinks.length === 0 && d.sourceLinks.length > 0;
+                const isSink = d.sourceLinks.length === 0 && d.targetLinks.length > 0;
+                
+                // Detail→Macro + Normal flow: ALL labels on LEFT (anchor end)
+                if (reverseHierarchy && !reverseFlow) {
+                    return "end";  // All labels anchor end (right-aligned, to left of bar)
+                }
+                
+                if (fatSubtypes.has(d.name)) {
+                    return "start";
+                }
+                
+                if (d.name === "Fatty Acids" && reverseFlow) {
+                    return "end";
+                }
+                
+                if (reverseFlow) {
+                    if (isSource) return "start";
+                    if (isSink) return "end";
+                    const nodeCenter = (d.x0 + d.x1) / 2;
+                    return nodeCenter > width / 2 ? "start" : "end";
+                } else {
+                    if (isSource) return "start";
+                    if (isSink) return "start";
+                    const nodeCenter = (d.x0 + d.x1) / 2;
+                    return nodeCenter < width / 2 ? "start" : "end";
+                }
+            })
+            .text(d => formatNodeLabel(d))
+            .style("fill", "#333")
+            .style("display", d => shouldShowLabel(d) ? null : "none");
 
         // Update title and subhead will be handled by the click handler
+        const dlBtn = document.getElementById('downloadSvgBtn');
+        if (dlBtn) dlBtn.disabled = false;
 
     } catch (error) {
         console.error('Error updating Sankey diagram:', error);
@@ -304,6 +435,8 @@ async function updateSankey(foodId) {
         showToast(String(error.message || 'Failed to load data'), () => {
             if (currentFoodId) updateSankey(currentFoodId);
         });
+        const dlBtn = document.getElementById('downloadSvgBtn');
+        if (dlBtn) dlBtn.disabled = true;
     }
 }
 
@@ -354,6 +487,140 @@ function escapeHtml(str) {
         .replace(/'/g, '&#039;');
 }
 
+// SVG download
+function downloadSankeySVG(options) {
+    const svg = document.querySelector('#sankeyDiagram_my_dataviz svg');
+    if (!svg) return;
+    const clone = svg.cloneNode(true);
+    clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+    clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    // Ensure no element uses pure black fills in the exported SVG
+    sanitizeBlackFills(clone);
+    // Add export-specific CSS to remove fills and keep strokes/text visible
+    insertExportStyles(clone);
+    // Optional: ensure background is white by default
+    // const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    // rect.setAttribute("width", clone.getAttribute("width"));
+    // rect.setAttribute("height", clone.getAttribute("height"));
+    // rect.setAttribute("fill", "#ffffff");
+    // clone.insertBefore(rect, clone.firstChild);
+    const serializer = new XMLSerializer();
+    let source = serializer.serializeToString(clone);
+    if (!source.match(/^<\?xml/)) {
+        source = '<?xml version="1.0" encoding="UTF-8"?>\n' + source;
+    }
+    const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const filename = `sankey_${currentFoodId || 'chart'}.svg`;
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+}
+
+const downloadBtn = document.getElementById('downloadSvgBtn');
+if (downloadBtn) {
+    downloadBtn.addEventListener('click', () => downloadSankeySVG({ tall: false }));
+}
+// no tall button; chart mode controls screen size, download reflects what's on screen
+
+// Format node label based on toggle
+function formatNodeLabel(d) {
+    if (showValueLabels && typeof d.value === 'number') {
+        return `${d.name} (${d.value.toFixed(1)}g)`;
+    }
+    return d.name;
+}
+
+function shouldShowLabel(d) {
+    const v = typeof d.value === 'number' ? d.value : 0;
+    return v > 0;
+}
+
+// Toggle handler for showing values in labels
+const toggleValueLabelsEl = document.getElementById('toggleValueLabels');
+if (toggleValueLabelsEl) {
+    toggleValueLabelsEl.addEventListener('change', (e) => {
+        showValueLabels = !!e.target.checked;
+        // Update existing labels without full re-render
+        d3.selectAll('#sankeyDiagram_my_dataviz .node text')
+            .text(d => formatNodeLabel(d))
+            .style("display", d => shouldShowLabel(d) ? null : "none");
+    });
+}
+
+// Reverse flow toggle (mirrors chart horizontally)
+const toggleReverseFlowEl = document.getElementById('toggleReverseFlow');
+if (toggleReverseFlowEl) {
+    toggleReverseFlowEl.addEventListener('change', (e) => {
+        reverseFlow = !!e.target.checked;
+        applyFlowMargins();
+        if (currentFoodId) updateSankey(currentFoodId);
+    });
+}
+
+// Reverse hierarchy toggle (swaps macro/subtype order: detail → macro)
+const toggleReverseHierarchyEl = document.getElementById('toggleReverseHierarchy');
+if (toggleReverseHierarchyEl) {
+    toggleReverseHierarchyEl.addEventListener('change', (e) => {
+        reverseHierarchy = !!e.target.checked;
+        // Re-fetch data with new hierarchy mode (margins stay the same)
+        applyFlowMargins();
+        if (currentFoodId) updateSankey(currentFoodId);
+    });
+}
+// Replace any black fills with a dark gray to avoid #000 in the exported SVG
+function sanitizeBlackFills(root) {
+    const candidates = new Set(['#000', '#000000', 'black', 'rgb(0, 0, 0)', '#000000ff']);
+    const shapeTags = new Set(['rect','path','circle','ellipse','polygon','polyline','line','g']); // leave text fills intact
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
+    while (walker.nextNode()) {
+        const el = walker.currentNode;
+        if (!el.getAttribute) continue;
+        const tag = (el.tagName || '').toLowerCase();
+        const isShape = shapeTags.has(tag);
+        if (!isShape) {
+            // Skip non-shape elements (e.g., text), keep their fills
+            continue;
+        }
+        const fillAttr = el.getAttribute('fill');
+        if (fillAttr && candidates.has(fillAttr.trim().toLowerCase())) {
+            el.setAttribute('fill', 'none');
+        }
+        const styleAttr = el.getAttribute('style');
+        if (styleAttr) {
+            const newStyle = styleAttr.replace(/fill\s*:\s*(#?000(?:000)?|black|rgb\(\s*0\s*,\s*0\s*,\s*0\s*\))/ig, 'fill:none');
+            if (newStyle !== styleAttr) {
+                el.setAttribute('style', newStyle);
+            }
+        }
+    }
+}
+
+// Insert CSS to remove fills for shapes while preserving strokes and text color
+function insertExportStyles(rootSvg) {
+    const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+    const style = document.createElementNS("http://www.w3.org/2000/svg", "style");
+    style.setAttribute("type", "text/css");
+    style.textContent = `
+      /* Remove fills for shapes in export; keep strokes and text */
+      .node rect { fill: none !important; stroke: #333333 !important; stroke-width: 1; }
+      rect, path, circle, ellipse, polygon, polyline { fill: none !important; }
+      text { fill: #333333 !important; }
+    `;
+    defs.appendChild(style);
+    // Insert at the top for precedence
+    const first = rootSvg.firstChild;
+    if (first) {
+        rootSvg.insertBefore(defs, first);
+    } else {
+        rootSvg.appendChild(defs);
+    }
+}
+
 // Tooltip functions
 function showTooltip(event, d) {
     const tooltip = d3.select("#sankeyTooltip");
@@ -394,12 +661,103 @@ function updateGraphDetails(foodId, foodDescription) {
 }
 
 // No default button controls on this page; search triggers rendering
+// Chart height mode controls (Default/Tall)
+function recomputeHeight() {
+    height = chartHeightCurrent - margin.top - margin.bottom;
+}
+function applyFlowMargins() {
+    // Reserve label gap for labels that extend outside the chart area
+    // Use consistent total margins so sankey width stays the same across all modes
+    const nowMobile = window.innerWidth <= 768;
+    const labelGap = nowMobile ? 100 : 160;
+    const smallGap = nowMobile ? 10 : 10;
+    
+    // Total margin should be consistent: labelGap + smallGap on each configuration
+    if (reverseFlow) {
+        // Reverse flow: labels on both sides, split evenly
+        const halfMargin = (labelGap + smallGap) / 2;
+        margin.left = halfMargin;
+        margin.right = halfMargin;
+    } else if (reverseHierarchy) {
+        // Detail→Macro + Normal flow: labels on LEFT
+        margin.left = labelGap;
+        margin.right = smallGap;
+    } else {
+        // Normal hierarchy + Normal flow: labels on RIGHT
+        margin.left = smallGap;
+        margin.right = labelGap;
+    }
+    width = document.getElementById('sankeyDiagram_my_dataviz').clientWidth - margin.left - margin.right;
+    // Update outer svg size and inner group transform
+    d3.select("#sankeyDiagram_my_dataviz svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+    svg.attr("transform", `translate(${margin.left},${margin.top})`);
+    sankey.extent([[0, 2], [width - 1, height - 5]]);
+}
+function applyChartSizing() {
+    recomputeHeight();
+    applyFlowMargins();
+    if (currentFoodId) {
+        updateSankey(currentFoodId);
+    }
+}
+const modeSmallEl = document.getElementById('modeSmall');
+const modeMediumEl = document.getElementById('modeMedium');
+const modeLargeEl = document.getElementById('modeLarge');
+if (modeSmallEl) {
+    modeSmallEl.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            chartHeightCurrent = chartHeightSmall;
+            applyChartSizing();
+        }
+    });
+}
+if (modeMediumEl) {
+    modeMediumEl.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            chartHeightCurrent = chartHeightMedium;
+            applyChartSizing();
+        }
+    });
+}
+if (modeLargeEl) {
+    modeLargeEl.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            chartHeightCurrent = chartHeightLarge;
+            applyChartSizing();
+        }
+    });
+}
 
 // Handle window resize
 window.addEventListener('resize', () => {
+    // Recalculate mobile state and update heights/margins accordingly
+    const nowMobile = window.innerWidth <= 768;
+    margin.top = nowMobile ? 20 : 30;
+    margin.right = nowMobile ? 100 : 160;
+    margin.bottom = nowMobile ? 20 : 30;
+    margin.left = nowMobile ? 5 : 10;
+    
+    // Update chart height options based on screen size
+    chartHeightSmall = nowMobile ? 350 : 550;
+    chartHeightMedium = nowMobile ? 500 : 1000;
+    chartHeightLarge = nowMobile ? 650 : 1100;
+    
+    // Reapply current size mode with new heights
+    if (document.getElementById('modeSmall').checked) {
+        chartHeightCurrent = chartHeightSmall;
+    } else if (document.getElementById('modeMedium').checked) {
+        chartHeightCurrent = chartHeightMedium;
+    } else if (document.getElementById('modeLarge').checked) {
+        chartHeightCurrent = chartHeightLarge;
+    }
+    height = chartHeightCurrent - margin.top - margin.bottom;
+    
     width = document.getElementById('sankeyDiagram_my_dataviz').clientWidth - margin.left - margin.right;
     d3.select("#sankeyDiagram_my_dataviz svg")
-        .attr("width", width + margin.left + margin.right);
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
     sankey.extent([[0, 2], [width - 1, height - 5]]);
     // Only re-render if we have a current selection
     if (currentFoodId) {
@@ -431,11 +789,13 @@ function updateNutrientDetails(data) {
     `;
 
     // Format fat breakdown
+    const transFat = findNodeValue('Trans');
     const fatHTML = `
         <ul class="list-unstyled">
             <li>Saturated Fat: ${findNodeValue('Sat.').toFixed(1)}g</li>
             <li>Monounsaturated Fat: ${findNodeValue('Mono').toFixed(1)}g</li>
             <li>Polyunsaturated Fat: ${findNodeValue('Poly').toFixed(1)}g</li>
+            ${transFat > 0 ? `<li><strong>Trans Fat: ${transFat.toFixed(2)}g</strong></li>` : ''}
             <li>Other Fats: ${findNodeValue('Other Fats').toFixed(1)}g</li>
         </ul>
     `;

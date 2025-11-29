@@ -17,6 +17,25 @@
                         <input type="text" class="form-control" id="searchInput" placeholder="Search for foods (e.g., beef, chicken, fish)">
                         <button class="btn btn-primary" type="button" id="searchButton">Search</button>
                     </div>
+                    <div class="d-flex flex-wrap gap-3 mb-2">
+                        <small class="text-muted me-1">Data sources:</small>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="dtBranded" value="Branded" checked>
+                            <label class="form-check-label" for="dtBranded">Branded</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="dtSRLegacy" value="SR Legacy" checked>
+                            <label class="form-check-label" for="dtSRLegacy">SR Legacy</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="dtFNDDS" value="Survey (FNDDS)" checked>
+                            <label class="form-check-label" for="dtFNDDS">Survey (FNDDS)</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="checkbox" id="dtFoundation" value="Foundation" checked>
+                            <label class="form-check-label" for="dtFoundation">Foundation</label>
+                        </div>
+                    </div>
                     <div id="searchResults" class="list-group mb-3" style="display: none;"></div>
                     <div id="loading" class="text-center" style="display: none;">
                         <div class="spinner-border" role="status">
@@ -27,10 +46,33 @@
                 <div class="choropleth_graphic_area">
                     <h4 id="sankeyDiagram_graphTitle" class="text-center mb-3">Search for a food item to view its nutrient breakdown</h4>
                     <p id="sankeyDiagram_graphSubhead" class="text-center mb-4">Type in the search box above to get started</p>
+                    <div class="d-flex justify-content-end align-items-center gap-2 mb-2">
+                        <div id="chartModeGroup" class="btn-group btn-group-sm" role="group" aria-label="Chart height mode">
+                            <input type="radio" class="btn-check" name="chartMode" id="modeSmall" autocomplete="off" checked>
+                            <label class="btn btn-outline-secondary" for="modeSmall">Small</label>
+                            <input type="radio" class="btn-check" name="chartMode" id="modeMedium" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="modeMedium">Medium</label>
+                            <input type="radio" class="btn-check" name="chartMode" id="modeLarge" autocomplete="off">
+                            <label class="btn btn-outline-secondary" for="modeLarge">Large</label>
+                        </div>
+                        <button id="downloadSvgBtn" class="btn btn-secondary btn-sm" disabled>Download SVG</button>
+                    </div>
                     <div id="sankeyTooltip"></div>
                     <div id="sankeyDiagram_my_dataviz">
-                        <div class="text-center initial-message">
-                            <p>Enter a food item in the search box to see its nutritional breakdown</p>
+
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="toggleValueLabels">
+                            <label class="form-check-label" for="toggleValueLabels">Show values in labels</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="toggleReverseHierarchy">
+                            <label class="form-check-label" for="toggleReverseHierarchy">Detail → Macro</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="toggleReverseFlow">
+                            <label class="form-check-label" for="toggleReverseFlow">Reverse flow</label>
                         </div>
                     </div>
                     <div id="sankeyDiagram_graphSource" class="text-center mt-3">
