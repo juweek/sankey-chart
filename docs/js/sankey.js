@@ -1,3 +1,7 @@
+// API Configuration - Change this to your Cloudflare Worker URL after deployment
+const API_BASE_URL = 'https://sankey-usda-proxy.gourmetdatalab.workers.dev';
+// For local development with Flask, use: const API_BASE_URL = '';
+
 // Define color schemes
 // Search functionality
 document.getElementById('searchButton').addEventListener('click', performSearch);
@@ -38,7 +42,7 @@ function performSearch(queryParam) {
 
     // Build URL with selected data types
     const dataTypes = getSelectedDataTypes();
-    let url = `/api/search?q=${encodeURIComponent(query)}`;
+    let url = `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`;
     if (dataTypes.length > 0) {
         url += '&dataTypes=' + encodeURIComponent(dataTypes.join(','));
     }
@@ -271,8 +275,8 @@ async function updateSankey(foodId) {
                 <div class="loading-text">Loading...</div>
             `);
 
-        // Fetch data from our Flask API
-        const url = `/api/food/${foodId}?reverseHierarchy=${reverseHierarchy}`;
+        // Fetch data from API
+        const url = `${API_BASE_URL}/api/food/${foodId}?reverseHierarchy=${reverseHierarchy}`;
         const response = await fetch(url);
         if (!response.ok) {
             let message = `Failed to fetch data (HTTP ${response.status})`;
@@ -501,12 +505,6 @@ function downloadSankeySVG(options) {
     sanitizeBlackFills(clone);
     // Add export-specific CSS to remove fills and keep strokes/text visible
     insertExportStyles(clone);
-    // Optional: ensure background is white by default
-    // const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-    // rect.setAttribute("width", clone.getAttribute("width"));
-    // rect.setAttribute("height", clone.getAttribute("height"));
-    // rect.setAttribute("fill", "#ffffff");
-    // clone.insertBefore(rect, clone.firstChild);
     const serializer = new XMLSerializer();
     let source = serializer.serializeToString(clone);
     if (!source.match(/^<\?xml/)) {
@@ -528,7 +526,6 @@ const downloadBtn = document.getElementById('downloadSvgBtn');
 if (downloadBtn) {
     downloadBtn.addEventListener('click', () => downloadSankeySVG({ tall: false }));
 }
-// no tall button; chart mode controls screen size, download reflects what's on screen
 
 // Format node label based on toggle
 function formatNodeLabel(d) {
@@ -663,8 +660,7 @@ function updateGraphDetails(foodId, foodDescription) {
         `Source: <a href="${usdaLink}" target="_blank">USDA FoodData Central Database</a>`;
 }
 
-// No default button controls on this page; search triggers rendering
-// Chart height mode controls (Default/Tall)
+// Chart height mode controls
 function recomputeHeight() {
     height = chartHeightCurrent - margin.top - margin.bottom;
 }
@@ -875,3 +871,4 @@ function updateNutrientDetails(data) {
     fatBreakdown.innerHTML = fatHTML;
     additionalInfo.innerHTML = carbsHTML;
 }
+

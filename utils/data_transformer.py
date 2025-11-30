@@ -16,7 +16,7 @@ def transform_to_sankey(food_data: Dict, reverse_hierarchy: bool = False) -> Dic
 
     # Initialize nodes
     node_names = [
-        "Total", "Water", "Nutr./Mins.", "Protein", "Amino Acids",
+        "Total", "Water", "Minerals", "Protein", "Amino Acids",
         "Fat", "Sat.", "Mono", "Poly", "Trans", "Other Fats", "Fatty Acids",
         "Carbs", "Sugars", "Fiber", "Starch"
     ]
@@ -53,7 +53,15 @@ def transform_to_sankey(food_data: Dict, reverse_hierarchy: bool = False) -> Dic
     protein = get_nutrient_amount(["Protein"])
     fat = get_nutrient_amount(["Total lipid (fat)"])
     carbs = get_nutrient_amount(["Carbohydrate, by difference"])
-    minerals = get_nutrient_amount(["Ash"]) or 2
+    
+    # Minerals/Ash - if not available, calculate as remainder of 100g
+    ash_value = get_nutrient_amount(["Ash"])
+    if ash_value > 0:
+        minerals = ash_value
+    else:
+        # Calculate as remainder: 100 - (water + protein + fat + carbs)
+        total_macros = water + protein + fat + carbs
+        minerals = max(0, 100 - total_macros) if total_macros < 100 else 0
 
     # Fat subtypes
     sat_fat = get_nutrient_amount(["Fatty acids, total saturated"]) or (fat * 0.42 if fat > 0 else 0)
@@ -84,7 +92,7 @@ def transform_to_sankey(food_data: Dict, reverse_hierarchy: bool = False) -> Dic
         add_link("Total", "Water", water)
         
         # Minerals stays simple
-        add_link("Total", "Nutr./Mins.", minerals)
+        add_link("Total", "Minerals", minerals)
         
         # Protein: Total → Amino Acids → Protein
         add_link("Total", "Amino Acids", protein)
@@ -144,8 +152,8 @@ def transform_to_sankey(food_data: Dict, reverse_hierarchy: bool = False) -> Dic
         add_link("Carbs", "Fiber", fiber)
         add_link("Carbs", "Starch", starch)
 
-        # Minerals and micronutrients
-        add_link("Total", "Nutr./Mins.", minerals)
+        # Minerals
+        add_link("Total", "Minerals", minerals)
 
     return {
         "nodes": nodes,
