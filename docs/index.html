@@ -8,7 +8,82 @@
     <link href="css/styles.css" rel="stylesheet">
 </head>
 <body>
-    <div class="container my-4">
+    <!-- Side Panel -->
+    <div id="sidePanel" class="side-panel">
+        <div class="side-panel-header">
+            <h5>Options</h5>
+            <button id="closePanelBtn" class="close-panel-btn">&times;</button>
+        </div>
+        <div class="side-panel-content">
+            <!-- Chart Size -->
+            <div class="panel-section">
+                <h6>Chart Size</h6>
+                <div class="btn-group-vertical w-100" role="group" aria-label="Chart height mode">
+                    <input type="radio" class="btn-check" name="chartMode" id="modeSmall" autocomplete="off" checked>
+                    <label class="btn btn-outline-secondary" for="modeSmall">Small</label>
+                    <input type="radio" class="btn-check" name="chartMode" id="modeMedium" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="modeMedium">Medium</label>
+                    <input type="radio" class="btn-check" name="chartMode" id="modeLarge" autocomplete="off">
+                    <label class="btn btn-outline-secondary" for="modeLarge">Large</label>
+                </div>
+            </div>
+
+            <!-- Display Options -->
+            <div class="panel-section">
+                <h6>Display Options</h6>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="toggleValueLabels">
+                    <label class="form-check-label" for="toggleValueLabels">Show values in labels</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="toggleReverseHierarchy">
+                    <label class="form-check-label" for="toggleReverseHierarchy">Detail → Macro</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="toggleReverseFlow">
+                    <label class="form-check-label" for="toggleReverseFlow">Reverse flow</label>
+                </div>
+            </div>
+
+            <!-- Data Sources -->
+            <div class="panel-section">
+                <h6>Data Sources</h6>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="dtBranded" value="Branded">
+                    <label class="form-check-label" for="dtBranded">Branded</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="dtSRLegacy" value="SR Legacy" checked>
+                    <label class="form-check-label" for="dtSRLegacy">SR Legacy</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="dtFNDDS" value="Survey (FNDDS)" checked>
+                    <label class="form-check-label" for="dtFNDDS">Survey (FNDDS)</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="dtFoundation" value="Foundation" checked>
+                    <label class="form-check-label" for="dtFoundation">Foundation</label>
+                </div>
+            </div>
+
+            <!-- Download -->
+            <div class="panel-section">
+                <button id="downloadSvgBtn" class="btn btn-secondary w-100" disabled>Download SVG</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel Toggle Button -->
+    <button id="openPanelBtn" class="open-panel-btn" title="Open Options">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872l-.1-.34zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+        </svg>
+    </button>
+
+    <!-- Overlay for mobile -->
+    <div id="panelOverlay" class="panel-overlay"></div>
+
+    <div class="sankey-container my-4">
         <div class="row">
             <div class="col-12">
                 <h1 class="text-center mb-4">Food Nutrition Breakdown</h1>
@@ -16,25 +91,6 @@
                     <div class="input-group mb-3">
                         <input type="text" class="form-control" id="searchInput" placeholder="Search for foods (e.g., beef, chicken, fish)">
                         <button class="btn btn-primary" type="button" id="searchButton">Search</button>
-                    </div>
-                    <div class="d-flex flex-wrap gap-3 mb-2">
-                        <small class="text-muted me-1">Data sources:</small>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" id="dtBranded" value="Branded" checked>
-                            <label class="form-check-label" for="dtBranded">Branded</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" id="dtSRLegacy" value="SR Legacy" checked>
-                            <label class="form-check-label" for="dtSRLegacy">SR Legacy</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" id="dtFNDDS" value="Survey (FNDDS)" checked>
-                            <label class="form-check-label" for="dtFNDDS">Survey (FNDDS)</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="checkbox" id="dtFoundation" value="Foundation" checked>
-                            <label class="form-check-label" for="dtFoundation">Foundation</label>
-                        </div>
                     </div>
                     <div id="searchResults" class="list-group mb-3" style="display: none;"></div>
                     <div id="loading" class="text-center" style="display: none;">
@@ -46,34 +102,9 @@
                 <div class="choropleth_graphic_area">
                     <h4 id="sankeyDiagram_graphTitle" class="text-center mb-3">Search for a food item to view its nutrient breakdown</h4>
                     <p id="sankeyDiagram_graphSubhead" class="text-center mb-4">Type in the search box above to get started</p>
-                    <div class="d-flex justify-content-end align-items-center gap-2 mb-2">
-                        <div id="chartModeGroup" class="btn-group btn-group-sm" role="group" aria-label="Chart height mode">
-                            <input type="radio" class="btn-check" name="chartMode" id="modeSmall" autocomplete="off" checked>
-                            <label class="btn btn-outline-secondary" for="modeSmall">Small</label>
-                            <input type="radio" class="btn-check" name="chartMode" id="modeMedium" autocomplete="off">
-                            <label class="btn btn-outline-secondary" for="modeMedium">Medium</label>
-                            <input type="radio" class="btn-check" name="chartMode" id="modeLarge" autocomplete="off">
-                            <label class="btn btn-outline-secondary" for="modeLarge">Large</label>
-                        </div>
-                        <button id="downloadSvgBtn" class="btn btn-secondary btn-sm" disabled>Download SVG</button>
-                    </div>
                     <div id="sankeyTooltip"></div>
                     <div id="sankeyDiagram_my_dataviz">
 
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="toggleValueLabels">
-                            <label class="form-check-label" for="toggleValueLabels">Show values in labels</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="toggleReverseHierarchy">
-                            <label class="form-check-label" for="toggleReverseHierarchy">Detail → Macro</label>
-                        </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="toggleReverseFlow">
-                            <label class="form-check-label" for="toggleReverseFlow">Reverse flow</label>
-                        </div>
                     </div>
                     <div id="sankeyDiagram_graphSource" class="text-center mt-3">
                         Source: <a href="https://fdc.nal.usda.gov/">USDA FoodData Database</a>

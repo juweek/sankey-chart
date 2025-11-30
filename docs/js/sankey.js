@@ -2,6 +2,35 @@
 const API_BASE_URL = "https://sankey-usda-proxy.gourmetdata.workers.dev";
 // For local development with Flask, use: const API_BASE_URL = "";
 
+// Side Panel Toggle
+const sidePanel = document.getElementById('sidePanel');
+const openPanelBtn = document.getElementById('openPanelBtn');
+const closePanelBtn = document.getElementById('closePanelBtn');
+const panelOverlay = document.getElementById('panelOverlay');
+
+function openPanel() {
+    sidePanel.classList.add('open');
+    panelOverlay.classList.add('active');
+    openPanelBtn.classList.add('hidden');
+}
+
+function closePanel() {
+    sidePanel.classList.remove('open');
+    panelOverlay.classList.remove('active');
+    openPanelBtn.classList.remove('hidden');
+}
+
+if (openPanelBtn) openPanelBtn.addEventListener('click', openPanel);
+if (closePanelBtn) closePanelBtn.addEventListener('click', closePanel);
+if (panelOverlay) panelOverlay.addEventListener('click', closePanel);
+
+// Close panel on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && sidePanel.classList.contains('open')) {
+        closePanel();
+    }
+});
+
 // Define color schemes
 // Search functionality
 document.getElementById('searchButton').addEventListener('click', performSearch);
@@ -31,18 +60,25 @@ function getSelectedDataTypes() {
     return types;
 }
 
-function performSearch(queryParam) {
+let currentSearchPage = 1;
+
+function performSearch(queryParam, page = 1) {
     const query = (typeof queryParam === 'string' ? queryParam : document.getElementById('searchInput').value.trim());
     if (!query) return;
     lastSearchQuery = query;
+    currentSearchPage = page;
 
     const searchResults = document.getElementById('searchResults');
-    searchResults.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    
+    // Show loading, but keep existing results if loading more
+    if (page === 1) {
+        searchResults.innerHTML = '<div class="text-center py-3"><div class="spinner-border" role="status"><span class="visually-hidden">Loading...</span></div></div>';
+    }
     searchResults.style.display = 'block';
 
-    // Build URL with selected data types
+    // Build URL with selected data types and page
     const dataTypes = getSelectedDataTypes();
-    let url = `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`;
+    let url = `${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}&page=${page}`;
     if (dataTypes.length > 0) {
         url += '&dataTypes=' + encodeURIComponent(dataTypes.join(','));
     }
@@ -61,8 +97,16 @@ function performSearch(queryParam) {
                 throw new Error(data.error);
             }
             
-            searchResults.innerHTML = '';
-            if (data.results.length === 0) {
+            // Clear results only on first page
+            if (page === 1) {
+                searchResults.innerHTML = '';
+            } else {
+                // Remove the "Load More" button if it exists
+                const loadMoreBtn = searchResults.querySelector('.load-more-btn');
+                if (loadMoreBtn) loadMoreBtn.remove();
+            }
+            
+            if (data.results.length === 0 && page === 1) {
                 searchResults.innerHTML = '<div class="alert alert-info">No results found</div>';
                 return;
             }
@@ -95,6 +139,24 @@ function performSearch(queryParam) {
                 });
                 searchResults.appendChild(button);
             });
+
+            // Add "Load More" button if there are more results
+            if (data.hasMore) {
+                const loadMoreDiv = document.createElement('div');
+                loadMoreDiv.className = 'load-more-btn text-center py-2';
+                loadMoreDiv.innerHTML = `
+                    <button class="btn btn-outline-primary btn-sm">
+                        Load More (Page ${data.page} of ${data.totalPages})
+                    </button>
+                `;
+                loadMoreDiv.querySelector('button').addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    // Show loading indicator on button
+                    loadMoreDiv.innerHTML = '<div class="spinner-border spinner-border-sm" role="status"></div>';
+                    performSearch(lastSearchQuery, currentSearchPage + 1);
+                });
+                searchResults.appendChild(loadMoreDiv);
+            }
         })
         .catch(error => {
             searchResults.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
@@ -729,39 +791,49 @@ if (modeLargeEl) {
     });
 }
 
-// Handle window resize
+// Handle window resize - debounced and only on width changes (not mobile scroll)
+let lastWidth = window.innerWidth;
+let resizeTimeout = null;
 window.addEventListener('resize', () => {
-    // Recalculate mobile state and update heights/margins accordingly
-    const nowMobile = window.innerWidth <= 768;
-    margin.top = nowMobile ? 20 : 30;
-    margin.right = nowMobile ? 100 : 160;
-    margin.bottom = nowMobile ? 20 : 30;
-    margin.left = nowMobile ? 5 : 10;
+    // Only respond to actual width changes (ignore mobile scroll height changes)
+    if (window.innerWidth === lastWidth) return;
+    lastWidth = window.innerWidth;
     
-    // Update chart height options based on screen size
-    chartHeightSmall = nowMobile ? 350 : 550;
-    chartHeightMedium = nowMobile ? 500 : 1000;
-    chartHeightLarge = nowMobile ? 650 : 1100;
-    
-    // Reapply current size mode with new heights
-    if (document.getElementById('modeSmall').checked) {
-        chartHeightCurrent = chartHeightSmall;
-    } else if (document.getElementById('modeMedium').checked) {
-        chartHeightCurrent = chartHeightMedium;
-    } else if (document.getElementById('modeLarge').checked) {
-        chartHeightCurrent = chartHeightLarge;
-    }
-    height = chartHeightCurrent - margin.top - margin.bottom;
-    
-    width = document.getElementById('sankeyDiagram_my_dataviz').clientWidth - margin.left - margin.right;
-    d3.select("#sankeyDiagram_my_dataviz svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom);
-    sankey.extent([[0, 2], [width - 1, height - 5]]);
-    // Only re-render if we have a current selection
-    if (currentFoodId) {
-        updateSankey(currentFoodId);
-    }
+    // Debounce resize events
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        // Recalculate mobile state and update heights/margins accordingly
+        const nowMobile = window.innerWidth <= 768;
+        margin.top = nowMobile ? 20 : 30;
+        margin.right = nowMobile ? 100 : 160;
+        margin.bottom = nowMobile ? 20 : 30;
+        margin.left = nowMobile ? 5 : 10;
+        
+        // Update chart height options based on screen size
+        chartHeightSmall = nowMobile ? 350 : 550;
+        chartHeightMedium = nowMobile ? 500 : 1000;
+        chartHeightLarge = nowMobile ? 650 : 1100;
+        
+        // Reapply current size mode with new heights
+        if (document.getElementById('modeSmall').checked) {
+            chartHeightCurrent = chartHeightSmall;
+        } else if (document.getElementById('modeMedium').checked) {
+            chartHeightCurrent = chartHeightMedium;
+        } else if (document.getElementById('modeLarge').checked) {
+            chartHeightCurrent = chartHeightLarge;
+        }
+        height = chartHeightCurrent - margin.top - margin.bottom;
+        
+        width = document.getElementById('sankeyDiagram_my_dataviz').clientWidth - margin.left - margin.right;
+        d3.select("#sankeyDiagram_my_dataviz svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom);
+        sankey.extent([[0, 2], [width - 1, height - 5]]);
+        // Only re-render if we have a current selection
+        if (currentFoodId) {
+            updateSankey(currentFoodId);
+        }
+    }, 250);
 });
 
 // Function to update the nutrient details text view

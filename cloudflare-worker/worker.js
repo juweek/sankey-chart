@@ -59,8 +59,10 @@ async function handleSearch(url, env) {
 
   const dataTypesParam = url.searchParams.get('dataTypes');
   const dataTypes = dataTypesParam ? dataTypesParam.split(',') : null;
+  const page = parseInt(url.searchParams.get('page')) || 1;
+  const pageSize = 50;
 
-  const searchUrl = `${USDA_BASE_URL}/foods/search?api_key=${env.USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=25`;
+  const searchUrl = `${USDA_BASE_URL}/foods/search?api_key=${env.USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=${pageSize}&pageNumber=${page}`;
   
   const response = await fetch(searchUrl);
   if (!response.ok) {
@@ -82,7 +84,18 @@ async function handleSearch(url, env) {
     brandOwner: food.brandOwner || null,
   }));
 
-  return new Response(JSON.stringify({ results }), {
+  // Include pagination info
+  const totalHits = data.totalHits || 0;
+  const totalPages = Math.ceil(totalHits / pageSize);
+  const hasMore = page < totalPages;
+
+  return new Response(JSON.stringify({ 
+    results, 
+    page, 
+    totalPages, 
+    totalHits,
+    hasMore 
+  }), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   });
 }

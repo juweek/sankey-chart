@@ -8,6 +8,209 @@
     --background-dark: #eae5e3;
     --tooltip-bg: #fff;
     --tooltip-border: #ccc;
+    --panel-width: 280px;
+}
+
+/* Side Panel */
+.side-panel {
+    position: fixed;
+    top: 0;
+    right: -var(--panel-width);
+    right: -280px;
+    width: var(--panel-width);
+    width: 280px;
+    height: 100vh;
+    background: #1f2937;
+    color: #e5e7eb;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    transform: translateX(0);
+    overflow-y: auto;
+}
+
+.side-panel.open {
+    transform: translateX(-280px);
+}
+
+.side-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid #374151;
+    background: #111827;
+}
+
+.side-panel-header h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.close-panel-btn {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.close-panel-btn:hover {
+    color: #fff;
+}
+
+.side-panel-content {
+    padding: 20px;
+}
+
+.panel-section {
+    margin-bottom: 24px;
+}
+
+.panel-section h6 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #9ca3af;
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.panel-section .form-check {
+    margin-bottom: 8px;
+}
+
+.panel-section .form-check-label {
+    color: #e5e7eb;
+}
+
+.panel-section .btn-group-vertical {
+    gap: 4px;
+}
+
+.panel-section .btn-outline-secondary {
+    color: #e5e7eb;
+    border-color: #4b5563;
+}
+
+.panel-section .btn-outline-secondary:hover,
+.panel-section .btn-check:checked + .btn-outline-secondary {
+    background-color: #4b5563;
+    color: #fff;
+    border-color: #4b5563;
+}
+
+/* Open Panel Button */
+.open-panel-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #1f2937;
+    color: #e5e7eb;
+    border: 3px solid #658394;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, transform 0.2s, border-color 0.2s;
+}
+
+.open-panel-btn svg {
+    width: 26px;
+    height: 26px;
+}
+
+.open-panel-btn:hover {
+    background: #374151;
+    transform: scale(1.1);
+    border-color: #7ba3b8;
+}
+
+.open-panel-btn.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Panel Overlay (for mobile) */
+.panel-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.panel-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Search results dropdown */
+#searchResults {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+#searchResults::-webkit-scrollbar {
+    width: 8px;
+}
+
+#searchResults::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+#searchResults::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+#searchResults::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+@media (max-width: 768px) {
+    #searchResults {
+        max-height: 300px;
+    }
+}
+
+/* Full width container - override Bootstrap */
+.sankey-container {
+    width: 100% !important;
+    max-width: 1800px !important;
+    margin: 0 auto;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+.sankey-container .row {
+    max-width: none !important;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+@media (max-width: 768px) {
+    .sankey-container {
+        padding-left: 10px;
+        padding-right: 10px;
+    }
 }
 
 .choropleth_graphic_area {
