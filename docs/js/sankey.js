@@ -1,6 +1,6 @@
 // API Configuration - Change this to your Cloudflare Worker URL after deployment
-const API_BASE_URL = 'https://sankey-usda-proxy.gourmetdatalab.workers.dev';
-// For local development with Flask, use: const API_BASE_URL = '';
+const API_BASE_URL = "https://sankey-usda-proxy.gourmetdata.workers.dev";
+// For local development with Flask, use: const API_BASE_URL = "";
 
 // Define color schemes
 // Search functionality
