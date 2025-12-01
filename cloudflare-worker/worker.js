@@ -127,6 +127,20 @@ async function handleFood(url, path, env) {
 
 /**
  * Transform USDA food data to Sankey diagram format
+ * 
+ * Normal hierarchy (Macro → Detail):
+ *   Total → Protein → Amino Acids
+ *   Total → Carbs → Sugars/Fiber/Starch
+ *   Total → Fat → Sat/Mono/Poly/Trans → Fatty Acids
+ *   Total → Water
+ *   Total → Minerals
+ * 
+ * Reverse hierarchy (Detail → Macro):
+ *   Amino Acids → Protein → Total
+ *   Sugars/Fiber/Starch → Carbs → Total
+ *   Fatty Acids → Sat/Mono/Poly/Trans → Fat → Total
+ *   Water → Total
+ *   Minerals → Total
  */
 function transformToSankey(foodData, reverseHierarchy = false) {
   const nutrients = foodData.foodNutrients || [];
@@ -158,9 +172,24 @@ function transformToSankey(foodData, reverseHierarchy = false) {
   const otherFats = Math.max(0, totalFat - satFat - monoFat - polyFat - transFat);
 
   // Carbs breakdown
-  const sugars = getNutrient('Total Sugars', 'Sugars, total');
+  // Use Total Sugars if available, otherwise sum individual sugars
+  let sugars = getNutrient('Total Sugars', 'Sugars, total');
+  if (sugars === 0) {
+    // Fallback: sum individual sugar types
+    const glucose = getNutrient('Glucose');
+    const fructose = getNutrient('Fructose');
+    const sucrose = getNutrient('Sucrose');
+    const maltose = getNutrient('Maltose');
+    const lactose = getNutrient('Lactose');
+    const galactose = getNutrient('Galactose');
+    sugars = glucose + fructose + sucrose + maltose + lactose + galactose;
+  }
   const fiber = getNutrient('Fiber, total dietary');
-  const starch = getNutrient('Starch');
+  // Use explicit starch if available, otherwise calculate as remainder
+  let starch = getNutrient('Starch');
+  if (starch === 0 && carbs > 0) {
+    starch = Math.max(0, carbs - sugars - fiber);
+  }
 
   // Minerals (Ash or calculated)
   let minerals = getNutrient('Ash');
@@ -168,7 +197,15 @@ function transformToSankey(foodData, reverseHierarchy = false) {
     minerals = Math.max(0, 100 - water - protein - totalFat - carbs);
   }
 
-  // Node definitions
+  // Log values for debugging
+  console.log('Sankey Data:', {
+    reverseHierarchy,
+    water, protein, totalFat, carbs, minerals,
+    satFat, monoFat, polyFat, transFat, otherFats,
+    sugars, fiber, starch
+  });
+
+  // Same node structure for both modes
   const nodeNames = [
     "Total", "Water", "Protein", "Fat", "Carbs", "Minerals",
     "Amino Acids", "Sat.", "Mono", "Poly", "Trans", "Fatty Acids", "Other Fats",
@@ -179,46 +216,84 @@ function transformToSankey(foodData, reverseHierarchy = false) {
   const nodeIndex = {};
   nodeNames.forEach((name, i) => { nodeIndex[name] = i; });
 
-  // Build links based on hierarchy mode
   const links = [];
 
   function addLink(source, target, value) {
     if (value > 0) {
-      if (reverseHierarchy) {
-        links.push({ source: nodeIndex[target], target: nodeIndex[source], value });
-      } else {
-        links.push({ source: nodeIndex[source], target: nodeIndex[target], value });
-      }
+      links.push({ source: nodeIndex[source], target: nodeIndex[target], value });
     }
   }
 
-  // Total to main categories
-  addLink("Total", "Water", water);
-  addLink("Total", "Protein", protein);
-  addLink("Total", "Fat", totalFat);
-  addLink("Total", "Carbs", carbs);
-  addLink("Total", "Minerals", minerals);
+  if (reverseHierarchy) {
+    // Detail → Macro view:
+    // Macros → Sub-nutrients → Fat types → Total
+    //
+    // Protein → Amino Acids → Total
+    // Fat → Sat/Mono/Poly/Trans → Fatty Acids → Total
+    // Fat → Other Fats → Total
+    // Carbs → Sugars/Fiber/Starch → Total
+    // Water → Total
+    // Minerals → Total
 
-  // Protein to Amino Acids
-  addLink("Protein", "Amino Acids", protein);
+    // Macros to sub-nutrients
+    addLink("Protein", "Amino Acids", protein);
+    addLink("Fat", "Sat.", satFat);
+    addLink("Fat", "Mono", monoFat);
+    addLink("Fat", "Poly", polyFat);
+    addLink("Fat", "Trans", transFat);
+    addLink("Fat", "Other Fats", otherFats);
+    addLink("Carbs", "Sugars", sugars);
+    addLink("Carbs", "Fiber", fiber);
+    addLink("Carbs", "Starch", starch);
 
-  // Fat breakdown
-  addLink("Fat", "Sat.", satFat);
-  addLink("Fat", "Mono", monoFat);
-  addLink("Fat", "Poly", polyFat);
-  addLink("Fat", "Trans", transFat);
-  addLink("Fat", "Other Fats", otherFats);
+    // Fat subtypes to Fatty Acids
+    addLink("Sat.", "Fatty Acids", satFat);
+    addLink("Mono", "Fatty Acids", monoFat);
+    addLink("Poly", "Fatty Acids", polyFat);
+    addLink("Trans", "Fatty Acids", transFat);
 
-  // Fat subtypes to Fatty Acids
-  addLink("Sat.", "Fatty Acids", satFat);
-  addLink("Mono", "Fatty Acids", monoFat);
-  addLink("Poly", "Fatty Acids", polyFat);
-  addLink("Trans", "Fatty Acids", transFat);
+    // Sub-nutrients to Total
+    addLink("Amino Acids", "Total", protein);
+    addLink("Fatty Acids", "Total", satFat + monoFat + polyFat + transFat);
+    addLink("Other Fats", "Total", otherFats);
+    addLink("Sugars", "Total", sugars);
+    addLink("Fiber", "Total", fiber);
+    addLink("Starch", "Total", starch);
+    addLink("Water", "Total", water);
+    addLink("Minerals", "Total", minerals);
 
-  // Carbs breakdown
-  addLink("Carbs", "Sugars", sugars);
-  addLink("Carbs", "Fiber", fiber);
-  addLink("Carbs", "Starch", starch);
+  } else {
+    // Normal Macro → Detail view:
+    // Total → Macros → Sub-nutrients → Fat types
+
+    // Total to main categories
+    addLink("Total", "Water", water);
+    addLink("Total", "Protein", protein);
+    addLink("Total", "Fat", totalFat);
+    addLink("Total", "Carbs", carbs);
+    addLink("Total", "Minerals", minerals);
+
+    // Protein to Amino Acids
+    addLink("Protein", "Amino Acids", protein);
+
+    // Fat breakdown
+    addLink("Fat", "Sat.", satFat);
+    addLink("Fat", "Mono", monoFat);
+    addLink("Fat", "Poly", polyFat);
+    addLink("Fat", "Trans", transFat);
+    addLink("Fat", "Other Fats", otherFats);
+
+    // Fat subtypes to Fatty Acids
+    addLink("Sat.", "Fatty Acids", satFat);
+    addLink("Mono", "Fatty Acids", monoFat);
+    addLink("Poly", "Fatty Acids", polyFat);
+    addLink("Trans", "Fatty Acids", transFat);
+
+    // Carbs breakdown
+    addLink("Carbs", "Sugars", sugars);
+    addLink("Carbs", "Fiber", fiber);
+    addLink("Carbs", "Starch", starch);
+  }
 
   return { nodes, links };
 }

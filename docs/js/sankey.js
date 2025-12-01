@@ -350,6 +350,16 @@ async function updateSankey(foodId) {
         }
         const data = await response.json();
 
+        // Debug: Log the data structure
+        console.log('=== Sankey Data ===');
+        console.log('Reverse Hierarchy:', reverseHierarchy);
+        console.log('Nodes:', data.nodes.map(n => n.name));
+        console.log('Links:', data.links.map(l => {
+            const sourceName = data.nodes[l.source]?.name || l.source;
+            const targetName = data.nodes[l.target]?.name || l.target;
+            return `${sourceName} → ${targetName}: ${l.value}g`;
+        }));
+
         // Remove loading overlay
         d3.select(".loading-overlay").remove();
 

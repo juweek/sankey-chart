@@ -11,6 +11,16 @@
     --panel-width: 280px;
 }
 
+/* Prevent horizontal scroll */
+html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+}
+
+body {
+    position: relative;
+}
+
 /* Side Panel */
 .side-panel {
     position: fixed;
@@ -69,6 +79,14 @@
 
 .panel-section {
     margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #374151;
+}
+
+.panel-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
 }
 
 .panel-section h6 {
@@ -410,6 +428,52 @@
     .container {
         padding-left: 8px;
         padding-right: 8px;
+    }
+    
+    /* Side panel mobile styles */
+    .side-panel {
+        width: 85vw;
+        max-width: 320px;
+        right: -85vw;
+    }
+    
+    .side-panel.open {
+        transform: translateX(-85vw);
+    }
+    
+    .side-panel-content {
+        padding: 16px;
+    }
+    
+    .panel-section {
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+    }
+    
+    .panel-section h6 {
+        font-size: 0.8rem;
+        margin-bottom: 10px;
+    }
+    
+    .panel-section .form-check {
+        margin-bottom: 10px;
+    }
+    
+    .panel-section .form-check-label {
+        font-size: 0.9rem;
+    }
+    
+    /* Smaller gear button on mobile */
+    .open-panel-btn {
+        width: 48px;
+        height: 48px;
+        top: 12px;
+        right: 12px;
+    }
+    
+    .open-panel-btn svg {
+        width: 22px;
+        height: 22px;
     }
     
     /* Smaller font for chart labels on mobile */
