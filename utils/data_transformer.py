@@ -14,9 +14,9 @@ def transform_to_sankey(food_data: Dict, reverse_hierarchy: bool = False) -> Dic
     node_index = {}
     current_node = 0
 
-    # Initialize nodes
+    # Initialize nodes (Amino Acids removed - it's 1:1 with Protein)
     node_names = [
-        "Total", "Water", "Minerals", "Protein", "Amino Acids",
+        "Total", "Water", "Minerals", "Protein",
         "Fat", "Sat.", "Mono", "Poly", "Trans", "Other Fats", "Fatty Acids",
         "Carbs", "Sugars", "Fiber", "Starch"
     ]
@@ -94,9 +94,8 @@ def transform_to_sankey(food_data: Dict, reverse_hierarchy: bool = False) -> Dic
         # Minerals stays simple
         add_link("Total", "Minerals", minerals)
         
-        # Protein: Total → Amino Acids → Protein
-        add_link("Total", "Amino Acids", protein)
-        add_link("Amino Acids", "Protein", protein)
+        # Protein goes directly to Total (no Amino Acids layer)
+        add_link("Total", "Protein", protein)
         
         # Fat: Total → Fatty Acids → (Sat/Mono/Poly/Trans) → Fat
         # Also Total → Other Fats → Fat
@@ -130,9 +129,8 @@ def transform_to_sankey(food_data: Dict, reverse_hierarchy: bool = False) -> Dic
         # Water content
         add_link("Total", "Water", water)
 
-        # Protein breakdown
+        # Protein (terminal node - no Amino Acids layer)
         add_link("Total", "Protein", protein)
-        add_link("Protein", "Amino Acids", protein)
 
         # Fat breakdown
         add_link("Total", "Fat", fat)

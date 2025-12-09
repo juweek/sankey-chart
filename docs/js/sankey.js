@@ -124,6 +124,7 @@ function performSearch(queryParam, page = 1) {
                 button.addEventListener('click', () => {
                     // Remember the current selection
                     currentFoodId = food.fdcId;
+                    currentFoodName = food.description;
 
                     // Update Sankey diagram
                     updateSankey(food.fdcId);
@@ -168,13 +169,11 @@ const nodeColor = {
     "Total": "#658394",
     "Water": "#658394",
     "Protein": "#54886A",
-    "Amino Acids": "#54886A",
     "Fat": "#B22222",
     "Sat.": "#B22222",
     "Mono": "#B22222",
     "Poly": "#B22222",
     "Trans": "#8B0000",
-    "Fatty Acids": "#B22222",
     "Other Fats": "#B22222",
     "Carbs": "#CC9A2E",
     "Sugars": "#CC9A2E",
@@ -188,28 +187,33 @@ const linkColorBase = {
     "Total-Water": "#658394",
     "Total-Protein": "#67B080",
     "Total-Carbs": "#CC9A2E",
-    "Total-Fat": "#B22222",
     "Total-Minerals": "#9370DB",
-    "Protein-Amino Acids": "#67B080",
-    "Fat-Mono": "#B22222",
-    "Fat-Sat.": "#B22222",
-    "Fat-Poly": "#B22222",
-    "Fat-Trans": "#8B0000",
-    "Mono-Fatty Acids": "#B22222",
-    "Sat.-Fatty Acids": "#B22222",
-    "Poly-Fatty Acids": "#B22222",
-    "Trans-Fatty Acids": "#8B0000",
-    "Fat-Other Fats": "#B22222", 
+    // Fat subtypes to Fat (normal mode: Total → Sat/Mono/Poly → Fat)
+    "Sat.-Fat": "#B22222",
+    "Mono-Fat": "#B22222",
+    "Poly-Fat": "#B22222",
+    "Trans-Fat": "#8B0000",
+    "Other Fats-Fat": "#B22222",
+    // Total to fat subtypes (normal mode)
+    "Total-Sat.": "#B22222",
+    "Total-Mono": "#B22222",
+    "Total-Poly": "#B22222",
+    "Total-Trans": "#8B0000",
+    "Total-Other Fats": "#B22222",
+    // Carbs breakdown
     "Carbs-Starch": "#CC9A2E", 
     "Carbs-Sugars": "#CC9A2E", 
     "Carbs-Fiber": "#CC9A2E",
-    // Reverse hierarchy specific
-    "Total-Amino Acids": "#67B080",
-    "Total-Fatty Acids": "#B22222",
-    "Total-Other Fats": "#B22222",
+    // Reverse hierarchy: subtypes to Total
     "Total-Sugars": "#CC9A2E",
     "Total-Fiber": "#CC9A2E",
     "Total-Starch": "#CC9A2E",
+    // Detail → Macro: Fat to subtypes
+    "Fat-Sat.": "#B22222",
+    "Fat-Mono": "#B22222",
+    "Fat-Poly": "#B22222",
+    "Fat-Trans": "#8B0000",
+    "Fat-Other Fats": "#B22222",
 };
 
 // Get link color - checks both directions (A-B and B-A)
@@ -229,24 +233,51 @@ const margin = {
 };
 let width = document.getElementById('sankeyDiagram_my_dataviz').clientWidth - margin.left - margin.right;
 
-// Different heights for mobile vs desktop
-let chartHeightSmall = isMobile ? 350 : 550;
-let chartHeightMedium = isMobile ? 500 : 1000;
-let chartHeightLarge = isMobile ? 650 : 1100;
+// Different heights for mobile vs desktop (adjusted for thinner flows)
+let chartHeightSmall = isMobile ? 300 : 380;
+let chartHeightMedium = isMobile ? 450 : 550;
+let chartHeightLarge = isMobile ? 600 : 750;
+let chartHeightTall = isMobile ? 900 : 1200;  // Tall skinny mode
 let chartHeightCurrent = chartHeightSmall;
 let height = chartHeightCurrent - margin.top - margin.bottom;
 
-// Track the currently selected food id for safe re-renders
+// Track the currently selected food id and name for safe re-renders
 let currentFoodId = null;
+let currentFoodName = null;
 let showValueLabels = false;
 let reverseFlow = false;
 let reverseHierarchy = false;
+let nodeSortMode = 'auto';  // 'auto', 'value', or 'custom'
+
+// Custom order for end nodes when custom mode is selected
+const customEndNodeOrder = {
+    "Water": 0,
+    "Minerals": 1,
+    "Protein": 2,
+    "Fat": 3,
+    "Sugars": 4,
+    "Fiber": 5,
+    "Starch": 6,
+    // Middle column nodes - keep them grouped
+    "Total": -10,
+    "Carbs": 10,
+    "Sat.": 11,
+    "Mono": 12,
+    "Poly": 13,
+    "Trans": 14,
+    "Other Fats": 15
+};
 
 // Initialize the Sankey diagram
+// Use 85% of vertical space to minimize whitespace
+const verticalScale = 0.85;
 const sankey = d3.sankey()
     .nodeWidth(20)
-    .nodePadding(17)
-    .extent([[0, 2], [width - 1, height - 5]]);
+    .nodePadding(18)
+    .nodeSort(null)  // Let d3-sankey use its built-in crossing minimization
+    .linkSort(null)  // Let d3-sankey optimize link ordering
+    .iterations(64)  // More iterations = better node positioning (default is 6)
+    .extent([[0, 2], [width - 1, (height - 5) * verticalScale]]);
 
 // Create SVG container
 const svg = d3.select("#sankeyDiagram_my_dataviz")
@@ -367,8 +398,141 @@ async function updateSankey(foodId) {
         svg.selectAll("*").remove();
         updateNutrientDetails(data);
 
-        // Generate the Sankey layout
-        const { nodes, links } = sankey(data);
+        // Generate the Sankey layout with dynamic padding
+        // First pass: compute with base padding
+        let basePadding = 18;
+        if (chartHeightCurrent === chartHeightLarge) {
+            basePadding = 22;
+        } else if (chartHeightCurrent === chartHeightTall) {
+            basePadding = 30;
+        }
+        sankey.nodePadding(basePadding);
+        
+        // Apply node sorting based on selected mode
+        if (nodeSortMode === 'custom') {
+            sankey.nodeSort((a, b) => {
+                const orderA = customEndNodeOrder[a.name] ?? 50;
+                const orderB = customEndNodeOrder[b.name] ?? 50;
+                return orderA - orderB;
+            });
+        } else if (nodeSortMode === 'value') {
+            sankey.nodeSort((a, b) => {
+                // Sort by value - larger nodes higher
+                return (b.value || 0) - (a.value || 0);
+            });
+        } else {
+            // 'auto' - Let d3 optimize to minimize crossings
+            sankey.nodeSort(null);
+        }
+        
+        let { nodes, links } = sankey(data);
+        
+        // Check height ratio between left (source) and right (sink) columns
+        // and increase padding if right side is too compressed
+        const xPositionsForPadding = [...new Set(nodes.map(d => Math.round(d.x0)))].sort((a, b) => a - b);
+        if (xPositionsForPadding.length >= 2) {
+            const leftX = xPositionsForPadding[0];
+            const rightX = xPositionsForPadding[xPositionsForPadding.length - 1];
+            
+            // Get nodes on each side
+            const leftNodes = nodes.filter(d => Math.round(d.x0) === leftX);
+            const rightNodes = nodes.filter(d => Math.round(d.x0) === rightX);
+            
+            if (leftNodes.length > 0 && rightNodes.length > 1) {
+                // Calculate total height used by each side (including padding)
+                const leftHeight = Math.max(...leftNodes.map(d => d.y1)) - Math.min(...leftNodes.map(d => d.y0));
+                const rightMinY = Math.min(...rightNodes.map(d => d.y0));
+                const rightMaxY = Math.max(...rightNodes.map(d => d.y1));
+                const rightHeight = rightMaxY - rightMinY;
+                
+                // If right side is less than 130% of left side, increase padding
+                const targetRatio = 1.30;
+                const currentRatio = rightHeight / leftHeight;
+                
+                if (currentRatio < targetRatio && rightNodes.length > 1) {
+                    // Calculate how much extra height we need
+                    const targetHeight = leftHeight * targetRatio;
+                    const extraHeightNeeded = targetHeight - rightHeight;
+                    
+                    // Distribute extra height as padding between nodes
+                    const extraPaddingPerGap = extraHeightNeeded / (rightNodes.length - 1);
+                    const newPadding = Math.min(basePadding + extraPaddingPerGap, 30); // cap at 35px
+                    
+                    // Recompute layout with new padding
+                    sankey.nodePadding(newPadding);
+                    const result = sankey(data);
+                    nodes = result.nodes;
+                    links = result.links;
+                    
+                    console.log(`Dynamic padding: ${basePadding}px → ${newPadding.toFixed(1)}px (ratio: ${currentRatio.toFixed(2)} → 1.30)`);
+                }
+            }
+        }
+        
+        // Fan out effect: spread end nodes vertically for less overlap
+        // Find unique x positions (columns)
+        const xPositions = [...new Set(nodes.map(d => Math.round(d.x0)))].sort((a, b) => a - b);
+        
+        if (xPositions.length > 1) {
+            // Determine which side to fan out based on hierarchy mode
+            // In normal mode: fan out the right side (details)
+            // In reverse hierarchy: fan out the left side (macros/details)
+            const fanOutX = reverseHierarchy ? xPositions[0] : xPositions[xPositions.length - 1];
+            const fanOutNodes = nodes.filter(d => Math.round(d.x0) === fanOutX);
+            
+            if (fanOutNodes.length > 1) {
+                // Calculate current bounds of these nodes
+                const minY = Math.min(...fanOutNodes.map(d => d.y0));
+                const maxY = Math.max(...fanOutNodes.map(d => d.y1));
+                const currentHeight = maxY - minY;
+                
+                // Target height: use more vertical space, more dramatic for large size
+                const availableHeight = (height - 5) * verticalScale;
+                // Adjust fan-out based on chart size
+                let fanOutScale = 1.4;  // default for small
+                let heightCap = 0.95;   // default cap at 95% of available height
+                if (chartHeightCurrent === chartHeightMedium) {
+                    fanOutScale = 1.8;
+                } else if (chartHeightCurrent === chartHeightLarge) {
+                    fanOutScale = 2.0;
+                } else if (chartHeightCurrent === chartHeightTall) {
+                    fanOutScale = 4.0;   // most dramatic spread for tall
+                    heightCap = 1.0;     // use 100% of available height
+                }
+                const targetHeight = Math.min(currentHeight * fanOutScale, availableHeight * heightCap);
+                const scale = targetHeight / currentHeight;
+                
+                // Center point for scaling
+                const centerY = (minY + maxY) / 2;
+                
+                // Track how each node moved so we can update links
+                const nodeOffsets = new Map();
+                
+                // Scale each node's y position around the center
+                fanOutNodes.forEach(d => {
+                    const oldY0 = d.y0;
+                    const nodeHeight = d.y1 - d.y0;
+                    const nodeCenterY = (d.y0 + d.y1) / 2;
+                    const newCenterY = centerY + (nodeCenterY - centerY) * scale;
+                    d.y0 = newCenterY - nodeHeight / 2;
+                    d.y1 = newCenterY + nodeHeight / 2;
+                    nodeOffsets.set(d, d.y0 - oldY0);
+                });
+                
+                // Update link y-positions for affected nodes
+                links.forEach(link => {
+                    const sourceOffset = nodeOffsets.get(link.source);
+                    const targetOffset = nodeOffsets.get(link.target);
+                    if (sourceOffset !== undefined) {
+                        link.y0 += sourceOffset;
+                    }
+                    if (targetOffset !== undefined) {
+                        link.y1 += targetOffset;
+                    }
+                });
+            }
+        }
+        
         // Optionally mirror layout horizontally for reverse flow
         if (reverseFlow) {
             nodes.forEach(d => {
@@ -406,7 +570,7 @@ async function updateSankey(foodId) {
             .attr("class", "node")
             .attr("transform", d => `translate(${d.x0},${d.y0})`);
 
-        // Add rectangles for nodes
+        // Add rectangles for nodes - use natural height from layout
         node.append("rect")
             .attr("height", d => d.y1 - d.y0)
             .attr("width", d => d.x1 - d.x0)
@@ -442,11 +606,6 @@ async function updateSankey(foodId) {
                     return nodeWidth + 6;
                 }
                 
-                // Special handling for Fatty Acids in reverse flow
-                if (d.name === "Fatty Acids" && reverseFlow) {
-                    return -6;
-                }
-                
                 if (reverseFlow) {
                     // Reverse flow: chart is mirrored
                     // Sources appear on right, sinks on left
@@ -477,10 +636,6 @@ async function updateSankey(foodId) {
                 
                 if (fatSubtypes.has(d.name)) {
                     return "start";
-                }
-                
-                if (d.name === "Fatty Acids" && reverseFlow) {
-                    return "end";
                 }
                 
                 if (reverseFlow) {
@@ -585,7 +740,15 @@ function downloadSankeySVG(options) {
     const blob = new Blob([source], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const filename = `sankey_${currentFoodId || 'chart'}.svg`;
+    // Use food name for filename, sanitized for filesystem compatibility
+    let fileNameBase = currentFoodName || currentFoodId || 'chart';
+    // Sanitize: replace invalid chars with underscore, limit length
+    fileNameBase = fileNameBase
+        .replace(/[<>:"/\\|?*]/g, '_')  // Remove invalid filename chars
+        .replace(/\s+/g, '_')            // Replace spaces with underscores
+        .replace(/_+/g, '_')             // Collapse multiple underscores
+        .substring(0, 80);               // Limit length
+    const filename = `sankey_${fileNameBase}.svg`;
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -644,6 +807,18 @@ if (toggleReverseHierarchyEl) {
         if (currentFoodId) updateSankey(currentFoodId);
     });
 }
+
+// Node sort mode dropdown
+const nodeSortModeEl = document.getElementById('nodeSortMode');
+if (nodeSortModeEl) {
+    nodeSortModeEl.addEventListener('change', (e) => {
+        nodeSortMode = e.target.value;
+        if (currentFoodId) updateSankey(currentFoodId);
+    });
+}
+
+// Fatty Acids toggle removed - Fat is now a terminal node
+
 // Replace any black fills with a dark gray to avoid #000 in the exported SVG
 function sanitizeBlackFills(root) {
     const candidates = new Set(['#000', '#000000', 'black', 'rgb(0, 0, 0)', '#000000ff']);
@@ -764,11 +939,19 @@ function applyFlowMargins() {
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom);
     svg.attr("transform", `translate(${margin.left},${margin.top})`);
-    sankey.extent([[0, 2], [width - 1, height - 5]]);
+    sankey.extent([[0, 2], [width - 1, (height - 5) * verticalScale]]);
 }
 function applyChartSizing() {
     recomputeHeight();
     applyFlowMargins();
+    // Adjust node padding based on chart size (more space for Tall mode)
+    if (chartHeightCurrent === chartHeightTall) {
+        sankey.nodePadding(30);  // more space between nodes for Tall
+    } else if (chartHeightCurrent === chartHeightLarge) {
+        sankey.nodePadding(22);
+    } else {
+        sankey.nodePadding(18);  // default for Small/Medium
+    }
     if (currentFoodId) {
         updateSankey(currentFoodId);
     }
@@ -800,6 +983,15 @@ if (modeLargeEl) {
         }
     });
 }
+const modeTallEl = document.getElementById('modeTall');
+if (modeTallEl) {
+    modeTallEl.addEventListener('change', (e) => {
+        if (e.target.checked) {
+            chartHeightCurrent = chartHeightTall;
+            applyChartSizing();
+        }
+    });
+}
 
 // Handle window resize - debounced and only on width changes (not mobile scroll)
 let lastWidth = window.innerWidth;
@@ -820,9 +1012,10 @@ window.addEventListener('resize', () => {
         margin.left = nowMobile ? 5 : 10;
         
         // Update chart height options based on screen size
-        chartHeightSmall = nowMobile ? 350 : 550;
-        chartHeightMedium = nowMobile ? 500 : 1000;
-        chartHeightLarge = nowMobile ? 650 : 1100;
+        chartHeightSmall = nowMobile ? 300 : 380;
+        chartHeightMedium = nowMobile ? 450 : 550;
+        chartHeightLarge = nowMobile ? 600 : 750;
+        chartHeightTall = nowMobile ? 900 : 1200;
         
         // Reapply current size mode with new heights
         if (document.getElementById('modeSmall').checked) {
@@ -831,6 +1024,8 @@ window.addEventListener('resize', () => {
             chartHeightCurrent = chartHeightMedium;
         } else if (document.getElementById('modeLarge').checked) {
             chartHeightCurrent = chartHeightLarge;
+        } else if (document.getElementById('modeTall').checked) {
+            chartHeightCurrent = chartHeightTall;
         }
         height = chartHeightCurrent - margin.top - margin.bottom;
         
@@ -838,7 +1033,7 @@ window.addEventListener('resize', () => {
         d3.select("#sankeyDiagram_my_dataviz svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom);
-        sankey.extent([[0, 2], [width - 1, height - 5]]);
+        sankey.extent([[0, 2], [width - 1, (height - 5) * verticalScale]]);
         // Only re-render if we have a current selection
         if (currentFoodId) {
             updateSankey(currentFoodId);

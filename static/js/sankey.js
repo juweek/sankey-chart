@@ -102,7 +102,6 @@ const nodeColor = {
     "Total": "#658394",
     "Water": "#658394",
     "Protein": "#54886A",
-    "Amino Acids": "#54886A",
     "Fat": "#B22222",
     "Sat.": "#B22222",
     "Mono": "#B22222",
@@ -124,7 +123,6 @@ const linkColorBase = {
     "Total-Carbs": "#CC9A2E",
     "Total-Fat": "#B22222",
     "Total-Minerals": "#9370DB",
-    "Protein-Amino Acids": "#67B080",
     "Fat-Mono": "#B22222",
     "Fat-Sat.": "#B22222",
     "Fat-Poly": "#B22222",
@@ -138,7 +136,6 @@ const linkColorBase = {
     "Carbs-Sugars": "#CC9A2E", 
     "Carbs-Fiber": "#CC9A2E",
     // Reverse hierarchy specific
-    "Total-Amino Acids": "#67B080",
     "Total-Fatty Acids": "#B22222",
     "Total-Other Fats": "#B22222",
     "Total-Sugars": "#CC9A2E",
