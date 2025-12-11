@@ -129,6 +129,11 @@ function performSearch(queryParam, page = 1) {
                     // Update Sankey diagram
                     updateSankey(food.fdcId);
                     
+                    // Update treemaps if function exists
+                    if (typeof window.updateTreemapsForFood === 'function') {
+                        window.updateTreemapsForFood(food.fdcId);
+                    }
+                    
                     // Update graph details with food description
                     updateGraphDetails(food.fdcId, food.description);
                     
@@ -166,7 +171,7 @@ function performSearch(queryParam, page = 1) {
 }
 
 const nodeColor = {
-    "Total": "#658394",
+    "Total": "#4A5568",  // Darker slate gray for the aggregate node
     "Water": "#658394",
     "Protein": "#54886A",
     "Fat": "#B22222",
@@ -903,8 +908,14 @@ function updateGraphDetails(foodId, foodDescription) {
     
     // Update source link with direct USDA food data link
     const usdaLink = `https://fdc.nal.usda.gov/fdc-app.html#/food-details/${foodId}/nutrients`;
-    document.getElementById("sankeyDiagram_graphSource").innerHTML = 
-        `Source: <a href="${usdaLink}" target="_blank">USDA FoodData Central Database</a>`;
+    const sourceHtml = `Source: <a href="${usdaLink}" target="_blank" rel="noopener noreferrer">USDA FoodData Central Database</a>`;
+    
+    // Update both Sankey and Treemap source links to the same URL
+    document.getElementById("sankeyDiagram_graphSource").innerHTML = sourceHtml;
+    const treemapSource = document.getElementById("treemap_graphSource");
+    if (treemapSource) {
+        treemapSource.innerHTML = sourceHtml;
+    }
 }
 
 // Chart height mode controls

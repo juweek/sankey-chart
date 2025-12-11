@@ -101,7 +101,9 @@ async function handleSearch(url, env) {
 }
 
 async function handleFood(url, path, env) {
-  const foodId = path.replace('/api/food/', '');
+  // Check if raw data is requested (for treemaps)
+  const isRaw = path.endsWith('/raw');
+  const foodId = path.replace('/api/food/', '').replace('/raw', '');
   const reverseHierarchy = url.searchParams.get('reverseHierarchy') === 'true';
 
   const foodUrl = `${USDA_BASE_URL}/food/${foodId}?api_key=${env.USDA_API_KEY}`;
@@ -118,6 +120,14 @@ async function handleFood(url, path, env) {
   }
 
   const foodData = await response.json();
+
+  // Return raw data for treemaps, or transformed data for Sankey
+  if (isRaw) {
+    return new Response(JSON.stringify(foodData), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
   const sankeyData = transformToSankey(foodData, reverseHierarchy);
 
   return new Response(JSON.stringify(sankeyData), {

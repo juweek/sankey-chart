@@ -537,3 +537,84 @@ body {
         height: 12px;
     }
 }
+
+/* Treemap Styles */
+.treemap-container {
+    width: 100%;
+    max-width: 100%;
+    min-height: 300px;
+    background: #1a1a2e;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.treemap-container svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+}
+
+.treemap-cell {
+    stroke: #1a1a2e;
+    stroke-width: 2px;
+}
+
+.treemap-label {
+    font-size: 12px;
+    font-weight: 500;
+    fill: #fff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+    pointer-events: none;
+}
+
+.treemap-value {
+    font-size: 10px;
+    fill: rgba(255,255,255,0.8);
+    pointer-events: none;
+}
+
+/* Tab styling */
+.nav-tabs {
+    border-bottom: 2px solid #333;
+}
+
+.nav-tabs .nav-link {
+    color: #999;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #fff;
+    border-color: transparent;
+}
+
+.nav-tabs .nav-link.active {
+    color: #fff;
+    background: transparent;
+    border-bottom: 2px solid #0d6efd;
+}
+
+.treemap-secondary {
+    min-height: 280px;
+}
+
+@media (max-width: 768px) {
+    .treemap-container {
+        min-height: 250px;
+    }
+    
+    .treemap-secondary {
+        min-height: 220px;
+    }
+    
+    .treemap-label {
+        font-size: 10px;
+    }
+    
+    .treemap-value {
+        font-size: 8px;
+    }
+}

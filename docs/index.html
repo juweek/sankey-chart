@@ -109,29 +109,92 @@
                         </div>
                     </div>
                 </div>
-                <div class="choropleth_graphic_area">
-                    <h4 id="sankeyDiagram_graphTitle" class="text-center mb-3">Search for a food item to view its nutrient breakdown</h4>
-                    <p id="sankeyDiagram_graphSubhead" class="text-center mb-4">Type in the search box above to get started</p>
-                    <div id="sankeyTooltip"></div>
-                    <div id="sankeyDiagram_my_dataviz">
+                <!-- Chart Type Tabs -->
+                <ul class="nav nav-tabs mb-3" id="chartTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="sankey-tab" data-bs-toggle="tab" data-bs-target="#sankeyPanel" type="button" role="tab">Sankey Flow</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="treemap-tab" data-bs-toggle="tab" data-bs-target="#treemapPanel" type="button" role="tab">Treemaps</button>
+                    </li>
+                </ul>
 
-                    </div>
-                    <div id="sankeyDiagram_graphSource" class="text-center mt-3">
-                        Source: <a href="https://fdc.nal.usda.gov/">USDA FoodData Database</a>
-                    </div>
-                    <div id="nutrientDetails" class="mt-4">
-                        <div class="row">
-                            <div class="col-md-4 col-6">
-                                <h6>Macronutrients</h6>
-                                <div id="macroNutrients"></div>
+                <div class="tab-content" id="chartTabContent">
+                    <!-- Sankey Tab -->
+                    <div class="tab-pane fade show active" id="sankeyPanel" role="tabpanel">
+                        <div class="choropleth_graphic_area">
+                            <h4 id="sankeyDiagram_graphTitle" class="text-center mb-3">Search for a food item to view its nutrient breakdown</h4>
+                            <p id="sankeyDiagram_graphSubhead" class="text-center mb-4">Type in the search box above to get started</p>
+                            <div id="sankeyTooltip"></div>
+                            <div id="sankeyDiagram_my_dataviz"></div>
+                            <div id="sankeyDiagram_graphSource" class="text-center mt-3">
+                                Source: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer">USDA FoodData Database</a>
                             </div>
-                            <div class="col-md-4 col-6">
-                                <h6>Fat Breakdown</h6>
-                                <div id="fatBreakdown"></div>
+                            <div id="nutrientDetails" class="mt-4">
+                                <div class="row">
+                                    <div class="col-md-4 col-6">
+                                        <h6>Macronutrients</h6>
+                                        <div id="macroNutrients"></div>
+                                    </div>
+                                    <div class="col-md-4 col-6">
+                                        <h6>Fat Breakdown</h6>
+                                        <div id="fatBreakdown"></div>
+                                    </div>
+                                    <div class="col-md-4 col-6 mt-3 mt-md-0">
+                                        <h6>Carbs Breakdown</h6>
+                                        <div id="additionalInfo"></div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-md-4 col-6 mt-3 mt-md-0">
-                                <h6>Carbs Breakdown</h6>
-                                <div id="additionalInfo"></div>
+                        </div>
+                    </div>
+
+                    <!-- Treemap Tab -->
+                    <div class="tab-pane fade" id="treemapPanel" role="tabpanel">
+                        <div class="choropleth_graphic_area">
+                            <h4 id="treemap_graphTitle" class="text-center mb-3">Nutrient Treemap</h4>
+                            <p id="treemap_graphSubhead" class="text-center mb-4">Visual breakdown of nutrient composition</p>
+                            
+                            <!-- Treemap Options -->
+                            <div class="d-flex justify-content-center gap-3 mb-3 flex-wrap align-items-center">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="treemapShowSubtypes" checked>
+                                    <label class="form-check-label" for="treemapShowSubtypes">Show subtypes</label>
+                                </div>
+                                <div class="btn-group btn-group-sm">
+                                    <button id="downloadTreemapSvg" class="btn btn-outline-secondary" disabled>Macro</button>
+                                    <button id="downloadFatTreemapSvg" class="btn btn-outline-secondary" disabled>Fat</button>
+                                    <button id="downloadCarbsTreemapSvg" class="btn btn-outline-secondary" disabled>Carbs</button>
+                                    <button id="downloadProteinTreemapSvg" class="btn btn-outline-secondary" disabled>Protein</button>
+                                </div>
+                            </div>
+
+                            <!-- Main Treemap -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">All Macronutrients (per 100g)</h5>
+                                    <div id="treemapContainer" class="treemap-container"></div>
+                                </div>
+                            </div>
+
+                            <!-- Secondary Treemaps Row -->
+                            <div class="row">
+                                <div class="col-lg-4 col-md-6 col-12 mb-4">
+                                    <h5 class="text-center">Fat Breakdown</h5>
+                                    <div id="fatTreemapContainer" class="treemap-container treemap-secondary"></div>
+                                </div>
+                                <div class="col-lg-4 col-md-6 col-12 mb-4">
+                                    <h5 class="text-center">Carbs Breakdown</h5>
+                                    <div id="carbsTreemapContainer" class="treemap-container treemap-secondary"></div>
+                                </div>
+                                <div class="col-lg-4 col-12 mb-4">
+                                    <h5 class="text-center">Protein (Amino Acids)</h5>
+                                    <div id="proteinTreemapContainer" class="treemap-container treemap-secondary"></div>
+                                </div>
+                            </div>
+
+                            <div id="treemap_graphSource" class="text-center mt-3">
+                                Source: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer">USDA FoodData Database</a>
                             </div>
                         </div>
                     </div>
@@ -140,9 +203,11 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
     <script src="js/sankey.js"></script>
+    <script src="js/treemap.js"></script>
     <div id="toastContainer" class="toast-container"></div>
 </body>
 </html>
