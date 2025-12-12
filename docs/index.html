@@ -161,15 +161,18 @@
                                     <input class="form-check-input" type="checkbox" id="treemapShowSubtypes" checked>
                                     <label class="form-check-label" for="treemapShowSubtypes">Show subtypes</label>
                                 </div>
-                                <div class="btn-group btn-group-sm">
+                                <div class="btn-group btn-group-sm flex-wrap">
                                     <button id="downloadTreemapSvg" class="btn btn-outline-secondary" disabled>Macro</button>
                                     <button id="downloadFatTreemapSvg" class="btn btn-outline-secondary" disabled>Fat</button>
                                     <button id="downloadCarbsTreemapSvg" class="btn btn-outline-secondary" disabled>Carbs</button>
                                     <button id="downloadProteinTreemapSvg" class="btn btn-outline-secondary" disabled>Protein</button>
+                                    <button id="downloadMicronutrientsTreemapSvg" class="btn btn-outline-secondary" disabled>Micro</button>
+                                    <button id="downloadMineralsTreemapSvg" class="btn btn-outline-secondary" disabled>Minerals</button>
+                                    <button id="downloadVitaminsTreemapSvg" class="btn btn-outline-secondary" disabled>Vitamins</button>
                                 </div>
                             </div>
 
-                            <!-- Main Treemap -->
+                            <!-- Row 1: Main Macronutrients Treemap -->
                             <div class="row mb-4">
                                 <div class="col-12">
                                     <h5 class="text-center">All Macronutrients (per 100g)</h5>
@@ -177,19 +180,43 @@
                                 </div>
                             </div>
 
-                            <!-- Secondary Treemaps Row -->
-                            <div class="row">
-                                <div class="col-lg-4 col-md-6 col-12 mb-4">
+                            <!-- Row 2: Fat, Carbs, Protein Breakdowns -->
+                            <div class="row mb-4">
+                                <div class="col-lg-4 col-md-6 col-12 mb-3">
                                     <h5 class="text-center">Fat Breakdown</h5>
                                     <div id="fatTreemapContainer" class="treemap-container treemap-secondary"></div>
                                 </div>
-                                <div class="col-lg-4 col-md-6 col-12 mb-4">
+                                <div class="col-lg-4 col-md-6 col-12 mb-3">
                                     <h5 class="text-center">Carbs Breakdown</h5>
                                     <div id="carbsTreemapContainer" class="treemap-container treemap-secondary"></div>
                                 </div>
-                                <div class="col-lg-4 col-12 mb-4">
+                                <div class="col-lg-4 col-12 mb-3">
                                     <h5 class="text-center">Protein (Amino Acids)</h5>
                                     <div id="proteinTreemapContainer" class="treemap-container treemap-secondary"></div>
+                                </div>
+                            </div>
+
+                            <!-- Row 3: All Micronutrients (Minerals + Vitamins combined) -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">All Micronutrients (Minerals + Vitamins)</h5>
+                                    <div id="micronutrientsTreemapContainer" class="treemap-container"></div>
+                                </div>
+                            </div>
+
+                            <!-- Row 4: Minerals Breakdown -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">Minerals Breakdown (mg)</h5>
+                                    <div id="mineralsTreemapContainer" class="treemap-container"></div>
+                                </div>
+                            </div>
+
+                            <!-- Row 5: Vitamins Breakdown -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">Vitamins Breakdown (mg)</h5>
+                                    <div id="vitaminsTreemapContainer" class="treemap-container"></div>
                                 </div>
                             </div>
 
