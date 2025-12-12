@@ -88,6 +88,7 @@ function buildMacroTreemapData(nutrients, showAllSubtypes) {
     const polyFat = nutrients.polyFat || 0;
     const transFat = nutrients.transFat || 0;
     const otherFat = nutrients.otherFat || 0;
+    const aminoAcids = nutrients.aminoAcids || {};
 
     const children = [];
 
@@ -96,9 +97,47 @@ function buildMacroTreemapData(nutrients, showAllSubtypes) {
         children.push({ name: "Water", value: water, color: treemapColors["Water"] });
     }
 
-    // Protein (no subtypes in our data)
+    // Protein - either as single block or with amino acid category subtypes
     if (protein > 0) {
-        children.push({ name: "Protein", value: protein, color: treemapColors["Protein"] });
+        const hasAminoAcids = Object.keys(aminoAcids).length > 0;
+        
+        if (showAllSubtypes && hasAminoAcids) {
+            // Group amino acids by category and sum totals
+            const essentialNames = new Set([
+                'Histidine', 'Isoleucine', 'Leucine', 'Lysine', 
+                'Methionine', 'Phenylalanine', 'Threonine', 'Tryptophan', 'Valine'
+            ]);
+            const conditionalNames = new Set(['Arginine', 'Cystine', 'Tyrosine', 'Glycine', 'Proline']);
+            
+            let essentialTotal = 0;
+            let conditionalTotal = 0;
+            let nonEssentialTotal = 0;
+            
+            for (const [name, value] of Object.entries(aminoAcids)) {
+                if (value > 0) {
+                    if (essentialNames.has(name)) {
+                        essentialTotal += value;
+                    } else if (conditionalNames.has(name)) {
+                        conditionalTotal += value;
+                    } else {
+                        nonEssentialTotal += value;
+                    }
+                }
+            }
+            
+            const proteinChildren = [];
+            if (essentialTotal > 0) proteinChildren.push({ name: "Essential", value: essentialTotal, color: "#43A047" });
+            if (conditionalTotal > 0) proteinChildren.push({ name: "Conditional", value: conditionalTotal, color: "#00897B" });
+            if (nonEssentialTotal > 0) proteinChildren.push({ name: "Non-Essential", value: nonEssentialTotal, color: "#26A69A" });
+            
+            if (proteinChildren.length > 0) {
+                children.push({ name: "Protein", children: proteinChildren, color: treemapColors["Protein"] });
+            } else {
+                children.push({ name: "Protein", value: protein, color: treemapColors["Protein"] });
+            }
+        } else {
+            children.push({ name: "Protein", value: protein, color: treemapColors["Protein"] });
+        }
     }
 
     // Fat - either as single block or with subtypes
@@ -298,6 +337,217 @@ function buildProteinTreemapData(nutrients, showDetails) {
     return { name: "Protein", children };
 }
 
+// Render macro treemap with stable parent positions
+function renderMacroTreemapStable(containerId, nutrients, showSubtypes) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    const { width, height } = getTreemapDimensions(containerId);
+
+    // Build parent-level data (always the same structure for stable layout)
+    const parentData = [];
+    if (nutrients.water > 0) parentData.push({ name: "Water", value: nutrients.water, color: treemapColors["Water"] });
+    if (nutrients.protein > 0) parentData.push({ name: "Protein", value: nutrients.protein, color: treemapColors["Protein"] });
+    if (nutrients.fat > 0) parentData.push({ name: "Fat", value: nutrients.fat, color: treemapColors["Fat"] });
+    if (nutrients.carbs > 0) parentData.push({ name: "Carbs", value: nutrients.carbs, color: treemapColors["Carbs"] });
+    if (nutrients.minerals > 0) parentData.push({ name: "Minerals", value: nutrients.minerals, color: treemapColors["Minerals"] });
+
+    if (parentData.length === 0) {
+        container.innerHTML = '<p class="text-center text-muted p-4">No data available</p>';
+        return;
+    }
+
+    // Create SVG
+    const svg = d3.select(`#${containerId}`)
+        .append("svg")
+        .attr("width", "100%")
+        .attr("height", height)
+        .attr("viewBox", `0 0 ${width} ${height}`)
+        .attr("preserveAspectRatio", "xMidYMid meet")
+        .attr("class", "treemap-svg")
+        .style("max-width", "100%");
+
+    // Layout parent blocks first (stable positions)
+    const parentRoot = d3.hierarchy({ name: "root", children: parentData })
+        .sum(d => d.value || 0)
+        .sort((a, b) => b.value - a.value);
+
+    d3.treemap()
+        .size([width, height])
+        .padding(2)
+        .round(true)(parentRoot);
+
+    // Get parent positions
+    const parentPositions = {};
+    parentRoot.leaves().forEach(d => {
+        parentPositions[d.data.name] = { x0: d.x0, y0: d.y0, x1: d.x1, y1: d.y1, color: d.data.color };
+    });
+
+    // Now render either parent blocks or subdivided blocks
+    if (!showSubtypes) {
+        // Just render parent blocks
+        const cells = svg.selectAll("g")
+            .data(parentRoot.leaves())
+            .join("g")
+            .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+        cells.append("rect")
+            .attr("class", "treemap-cell")
+            .attr("width", d => Math.max(0, d.x1 - d.x0))
+            .attr("height", d => Math.max(0, d.y1 - d.y0))
+            .attr("fill", d => d.data.color || "#666")
+            .attr("rx", 3)
+            .style("cursor", "pointer")
+            .on("mouseover", function() { d3.select(this).style("opacity", 0.8); })
+            .on("mouseout", function() { d3.select(this).style("opacity", 1); });
+
+        addTreemapLabels(cells);
+    } else {
+        // Render subdivided blocks within parent positions
+        for (const [parentName, pos] of Object.entries(parentPositions)) {
+            const parentWidth = pos.x1 - pos.x0;
+            const parentHeight = pos.y1 - pos.y0;
+            
+            let childData = [];
+            
+            if (parentName === "Protein" && nutrients.aminoAcids && Object.keys(nutrients.aminoAcids).length > 0) {
+                // Get protein subtypes
+                const essentialNames = new Set(['Histidine', 'Isoleucine', 'Leucine', 'Lysine', 'Methionine', 'Phenylalanine', 'Threonine', 'Tryptophan', 'Valine']);
+                const conditionalNames = new Set(['Arginine', 'Cystine', 'Tyrosine', 'Glycine', 'Proline']);
+                let essentialTotal = 0, conditionalTotal = 0, nonEssentialTotal = 0;
+                for (const [name, value] of Object.entries(nutrients.aminoAcids)) {
+                    if (value > 0) {
+                        if (essentialNames.has(name)) essentialTotal += value;
+                        else if (conditionalNames.has(name)) conditionalTotal += value;
+                        else nonEssentialTotal += value;
+                    }
+                }
+                if (essentialTotal > 0) childData.push({ name: "Essential", value: essentialTotal, color: "#43A047" });
+                if (conditionalTotal > 0) childData.push({ name: "Conditional", value: conditionalTotal, color: "#00897B" });
+                if (nonEssentialTotal > 0) childData.push({ name: "Non-Ess.", value: nonEssentialTotal, color: "#26A69A" });
+            } else if (parentName === "Fat") {
+                if (nutrients.satFat > 0) childData.push({ name: "Sat.", value: nutrients.satFat, color: treemapColors["Sat."] });
+                if (nutrients.monoFat > 0) childData.push({ name: "Mono", value: nutrients.monoFat, color: treemapColors["Mono"] });
+                if (nutrients.polyFat > 0) childData.push({ name: "Poly", value: nutrients.polyFat, color: treemapColors["Poly"] });
+                if (nutrients.transFat > 0) childData.push({ name: "Trans", value: nutrients.transFat, color: treemapColors["Trans"] });
+                if (nutrients.otherFat > 0) childData.push({ name: "Other", value: nutrients.otherFat, color: treemapColors["Other Fats"] });
+            } else if (parentName === "Carbs") {
+                if (nutrients.sugars > 0) childData.push({ name: "Sugars", value: nutrients.sugars, color: treemapColors["Sugars"] });
+                if (nutrients.fiber > 0) childData.push({ name: "Fiber", value: nutrients.fiber, color: treemapColors["Fiber"] });
+                if (nutrients.starch > 0) childData.push({ name: "Starch", value: nutrients.starch, color: treemapColors["Starch"] });
+            }
+
+            if (childData.length > 0) {
+                // Create sub-treemap within parent area
+                const childRoot = d3.hierarchy({ name: parentName, children: childData })
+                    .sum(d => d.value || 0)
+                    .sort((a, b) => b.value - a.value);
+
+                d3.treemap()
+                    .size([parentWidth - 2, parentHeight - 2])
+                    .padding(1)
+                    .round(true)(childRoot);
+
+                const cells = svg.selectAll(`.cells-${parentName}`)
+                    .data(childRoot.leaves())
+                    .join("g")
+                    .attr("class", `cells-${parentName}`)
+                    .attr("transform", d => `translate(${pos.x0 + 1 + d.x0},${pos.y0 + 1 + d.y0})`);
+
+                cells.append("rect")
+                    .attr("class", "treemap-cell")
+                    .attr("width", d => Math.max(0, d.x1 - d.x0))
+                    .attr("height", d => Math.max(0, d.y1 - d.y0))
+                    .attr("fill", d => d.data.color || pos.color)
+                    .attr("rx", 2)
+                    .style("cursor", "pointer")
+                    .on("mouseover", function() { d3.select(this).style("opacity", 0.8); })
+                    .on("mouseout", function() { d3.select(this).style("opacity", 1); });
+
+                addTreemapLabels(cells);
+            } else {
+                // No children, just render parent block
+                const cell = svg.append("g")
+                    .attr("transform", `translate(${pos.x0},${pos.y0})`);
+
+                cell.append("rect")
+                    .attr("class", "treemap-cell")
+                    .attr("width", Math.max(0, parentWidth))
+                    .attr("height", Math.max(0, parentHeight))
+                    .attr("fill", pos.color)
+                    .attr("rx", 3)
+                    .style("cursor", "pointer")
+                    .on("mouseover", function() { d3.select(this).style("opacity", 0.8); })
+                    .on("mouseout", function() { d3.select(this).style("opacity", 1); });
+
+                addTreemapLabelsToCell(cell, parentName, nutrients[parentName.toLowerCase()] || 0, parentWidth, parentHeight);
+            }
+        }
+    }
+
+    return svg;
+}
+
+// Helper to add labels to treemap cells
+function addTreemapLabels(cells) {
+    cells.each(function(d) {
+        const cellWidth = d.x1 - d.x0;
+        const cellHeight = d.y1 - d.y0;
+        const g = d3.select(this);
+
+        if (cellWidth > 40 && cellHeight > 25) {
+            g.append("text")
+                .attr("class", "treemap-label")
+                .attr("x", 5)
+                .attr("y", 15)
+                .text(d.data.name);
+
+            if (cellHeight > 35) {
+                g.append("text")
+                    .attr("class", "treemap-value")
+                    .attr("x", 5)
+                    .attr("y", 28)
+                    .text(`${d.value.toFixed(1)}g`);
+            }
+        } else if (cellWidth > 25 && cellHeight > 15) {
+            g.append("text")
+                .attr("class", "treemap-value")
+                .attr("x", 3)
+                .attr("y", 12)
+                .style("font-size", "9px")
+                .text(`${d.value.toFixed(1)}g`);
+        }
+    });
+}
+
+// Helper to add labels to a single cell
+function addTreemapLabelsToCell(g, name, value, cellWidth, cellHeight) {
+    if (cellWidth > 40 && cellHeight > 25) {
+        g.append("text")
+            .attr("class", "treemap-label")
+            .attr("x", 5)
+            .attr("y", 15)
+            .text(name);
+
+        if (cellHeight > 35) {
+            g.append("text")
+                .attr("class", "treemap-value")
+                .attr("x", 5)
+                .attr("y", 28)
+                .text(`${value.toFixed(1)}g`);
+        }
+    } else if (cellWidth > 25 && cellHeight > 15) {
+        g.append("text")
+            .attr("class", "treemap-value")
+            .attr("x", 3)
+            .attr("y", 12)
+            .style("font-size", "9px")
+            .text(`${value.toFixed(1)}g`);
+    }
+}
+
 // Render a treemap
 function renderTreemap(containerId, data, title) {
     const container = document.getElementById(containerId);
@@ -408,9 +658,8 @@ function updateTreemaps() {
 
     const { fat, carbs, protein } = currentTreemapData;
 
-    // Main macro treemap (always show)
-    const macroData = buildMacroTreemapData(currentTreemapData, showSubtypes);
-    renderTreemap('treemapContainer', macroData, 'All Macronutrients');
+    // Main macro treemap (always show) - uses stable layout
+    renderMacroTreemapStable('treemapContainer', currentTreemapData, showSubtypes);
 
     // Fat-only treemap - hide if no fat
     const hasFat = fat > 0;
