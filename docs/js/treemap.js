@@ -20,6 +20,7 @@ const treemapColors = {
     "Fiber": "#A67C1A",
     "Starch": "#BF8E26",
     "Minerals": "#9370DB",
+    "Sodium": "#8B5FCF",
     // Essential amino acids (bright greens - 9 total)
     "Histidine": "#2E7D32",
     "Isoleucine": "#388E3C",
@@ -41,46 +42,61 @@ const treemapColors = {
     "Aspartic acid": "#00838F",
     "Glutamic acid": "#006064",
     "Serine": "#4DD0E1",
-    // Mineral colors - ALL BLUES/TEALS for easy grouping
-    // Electrolytes (bright blues)
-    "Electrolytes": "#1565C0",
-    "Sodium": "#1976D2",
-    "Potassium": "#2196F3",
-    // Macro Minerals (blue-teals)
-    "Macro Minerals": "#0277BD",
-    "Calcium": "#0288D1",
-    "Phosphorus": "#039BE5",
-    "Magnesium": "#03A9F4",
-    // Trace Minerals (teals/cyans)
-    "Trace Minerals": "#00838F",
-    "Iron": "#0097A7",
-    "Zinc": "#00ACC1",
-    "Copper": "#00BCD4",
-    "Manganese": "#26C6DA",
-    "Selenium": "#4DD0E1",
-    // Vitamin colors - ALL ORANGES/YELLOWS for easy grouping
-    // Water-soluble vitamins (bright oranges)
-    "Water-Soluble": "#E65100",
+    
+    // MINERAL COLORS - ALL PURPLES (matching Sankey)
+    // Functional groups
+    "Hydration & Nerves": "#7B68EE",
+    "Bones & Structure": "#9370DB",
+    "Energy & Circulation": "#8B5FCF",
+    "Growth & Defense": "#6A5ACD",
+    // Individual minerals (purple shades)
+    "Potassium": "#9370DB",
+    "Chloride": "#8B5FCF",
+    "Calcium": "#7B68EE",
+    "Phosphorus": "#9575CD",
+    "Magnesium": "#B39DDB",
+    "Iron": "#8B5FCF",
+    "Copper": "#9370DB",
+    "Chromium": "#7B68EE",
+    "Manganese": "#9575CD",
+    "Molybdenum": "#B39DDB",
+    "Zinc": "#6A5ACD",
+    "Selenium": "#7E57C2",
+    "Iodine": "#9575CD",
+    
+    // VITAMIN COLORS - ALL ORANGES/YELLOWS
+    // Functional groups
+    "Vitamins": "#FF9800",
+    "Energy & Metabolism": "#F57C00",
+    "Growth & Regulation": "#FF6F00",
+    // Individual vitamins (orange shades)
     "Vitamin C": "#EF6C00",
     "Thiamin (B1)": "#F57C00",
     "Riboflavin (B2)": "#FB8C00",
     "Niacin (B3)": "#FF9800",
     "Pantothenic (B5)": "#FFA726",
     "Vitamin B-6": "#FFB74D",
-    "Folate (B9)": "#FFCC80",
-    "Vitamin B-12": "#FFE0B2",
-    "Choline": "#FF8F00",
-    // Fat-soluble vitamins (amber/yellow-oranges)
-    "Fat-Soluble": "#FF6F00",
-    "Vitamin A": "#FF8F00",
-    "Vitamin D": "#FFA000",
-    "Vitamin E": "#FFB300",
-    "Vitamin K": "#FFC107"
+    "Biotin": "#FFCC80",
+    "Folate (B9)": "#FFE0B2",
+    "Vitamin B-12": "#FF8F00",
+    "Choline": "#FFC107",
+    "Vitamin A": "#EF6C00",
+    "Vitamin D": "#F57C00",
+    "Vitamin E": "#FB8C00",
+    "Vitamin K": "#FF9800",
+    
+    // Legacy colors for backward compatibility
+    "Electrolytes": "#7B68EE",
+    "Macro Minerals": "#9370DB",
+    "Trace Minerals": "#8B5FCF",
+    "Water-Soluble": "#F57C00",
+    "Fat-Soluble": "#FF6F00"
 };
 
 // State
 let currentTreemapData = null;
 let showSubtypes = true;
+let showSodiumSeparately = false;  // Synced with Sankey's showSodium toggle
 let treemapChartSize = 'small';  // 'small', 'medium', 'large', 'tall'
 
 // Height configurations matching sankey.js
@@ -124,6 +140,7 @@ function buildMacroTreemapData(nutrients, showAllSubtypes) {
     const transFat = nutrients.transFat || 0;
     const otherFat = nutrients.otherFat || 0;
     const aminoAcids = nutrients.aminoAcids || {};
+    const mineralData = nutrients.mineralData || {};
 
     const children = [];
 
@@ -213,9 +230,21 @@ function buildMacroTreemapData(nutrients, showAllSubtypes) {
         }
     }
 
-    // Minerals
+    // Minerals - split into Sodium + Minerals when showing subtypes
     if (minerals > 0) {
-        children.push({ name: "Minerals", value: minerals, color: treemapColors["Minerals"] });
+        if (showAllSubtypes && mineralData.sodium > 0) {
+            const sodiumG = mineralData.sodium / 1000; // Convert mg to g
+            const otherMinerals = Math.max(0, minerals - sodiumG);
+            
+            const mineralChildren = [];
+            mineralChildren.push({ name: "Sodium", value: sodiumG, color: treemapColors["Sodium"] });
+            if (otherMinerals > 0) {
+                mineralChildren.push({ name: "Other Minerals", value: otherMinerals, color: treemapColors["Minerals"] });
+            }
+            children.push({ name: "Minerals", children: mineralChildren, color: treemapColors["Minerals"] });
+        } else {
+            children.push({ name: "Minerals", value: minerals, color: treemapColors["Minerals"] });
+        }
     }
 
     return { name: "Nutrients", children };
@@ -264,57 +293,90 @@ function buildMineralsTreemapData(nutrients, showDetails) {
         return { name: "Minerals", children: [] };
     }
 
-    // Electrolytes (sodium, potassium) - in mg
-    const electrolytes = [];
-    if (m.sodium > 0) electrolytes.push({ name: "Sodium", value: m.sodium, color: treemapColors["Sodium"] });
-    if (m.potassium > 0) electrolytes.push({ name: "Potassium", value: m.potassium, color: treemapColors["Potassium"] });
+    // Sodium value (for separate Salt category when showSodiumSeparately is true)
+    const sodiumValue = m.sodium || 0;
+
+    // Functional groupings for minerals:
+    // 1. Hydration & Nerves: Potassium, Chloride (Sodium separate if showSodiumSeparately)
+    const hydrationNerves = [];
+    // Only include sodium in this group if NOT showing separately
+    if (!showSodiumSeparately && m.sodium > 0) {
+        hydrationNerves.push({ name: "Sodium", value: m.sodium, color: treemapColors["Sodium"] });
+    }
+    if (m.potassium > 0) hydrationNerves.push({ name: "Potassium", value: m.potassium, color: treemapColors["Potassium"] });
+    if (m.chloride > 0) hydrationNerves.push({ name: "Chloride", value: m.chloride, color: treemapColors["Chloride"] || "#7B68EE" });
     
-    // Macro minerals (calcium, phosphorus, magnesium) - in mg
-    const macroMinerals = [];
-    if (m.calcium > 0) macroMinerals.push({ name: "Calcium", value: m.calcium, color: treemapColors["Calcium"] });
-    if (m.phosphorus > 0) macroMinerals.push({ name: "Phosphorus", value: m.phosphorus, color: treemapColors["Phosphorus"] });
-    if (m.magnesium > 0) macroMinerals.push({ name: "Magnesium", value: m.magnesium, color: treemapColors["Magnesium"] });
+    // 2. Bones & Structure: Calcium, Phosphorus, Magnesium
+    const bonesStructure = [];
+    if (m.calcium > 0) bonesStructure.push({ name: "Calcium", value: m.calcium, color: treemapColors["Calcium"] });
+    if (m.phosphorus > 0) bonesStructure.push({ name: "Phosphorus", value: m.phosphorus, color: treemapColors["Phosphorus"] });
+    if (m.magnesium > 0) bonesStructure.push({ name: "Magnesium", value: m.magnesium, color: treemapColors["Magnesium"] });
     
-    // Trace minerals (iron, zinc, copper, manganese, selenium) - in mg (selenium often µg but we'll use mg value)
-    const traceMinerals = [];
-    if (m.iron > 0) traceMinerals.push({ name: "Iron", value: m.iron, color: treemapColors["Iron"] });
-    if (m.zinc > 0) traceMinerals.push({ name: "Zinc", value: m.zinc, color: treemapColors["Zinc"] });
-    if (m.copper > 0) traceMinerals.push({ name: "Copper", value: m.copper, color: treemapColors["Copper"] });
-    if (m.manganese > 0) traceMinerals.push({ name: "Manganese", value: m.manganese, color: treemapColors["Manganese"] });
-    if (m.selenium > 0) traceMinerals.push({ name: "Selenium", value: m.selenium, color: treemapColors["Selenium"] });
+    // 3. Energy & Circulation: Iron, Copper, Chromium, Manganese, Molybdenum
+    const energyCirculation = [];
+    if (m.iron > 0) energyCirculation.push({ name: "Iron", value: m.iron, color: treemapColors["Iron"] });
+    if (m.copper > 0) energyCirculation.push({ name: "Copper", value: m.copper, color: treemapColors["Copper"] });
+    if (m.chromium > 0) energyCirculation.push({ name: "Chromium", value: m.chromium, color: treemapColors["Chromium"] || "#8B5FCF" });
+    if (m.manganese > 0) energyCirculation.push({ name: "Manganese", value: m.manganese, color: treemapColors["Manganese"] });
+    if (m.molybdenum > 0) energyCirculation.push({ name: "Molybdenum", value: m.molybdenum, color: treemapColors["Molybdenum"] || "#9370DB" });
+    
+    // 4. Growth & Defense: Zinc, Selenium, Iodine
+    const growthDefense = [];
+    if (m.zinc > 0) growthDefense.push({ name: "Zinc", value: m.zinc, color: treemapColors["Zinc"] });
+    if (m.selenium > 0) growthDefense.push({ name: "Selenium", value: m.selenium, color: treemapColors["Selenium"] });
+    if (m.iodine > 0) growthDefense.push({ name: "Iodine", value: m.iodine, color: treemapColors["Iodine"] || "#6A5ACD" });
 
     const children = [];
 
     if (!showDetails) {
-        // Show grouped totals only
-        const electrolyteTotal = electrolytes.reduce((sum, e) => sum + e.value, 0);
-        const macroTotal = macroMinerals.reduce((sum, e) => sum + e.value, 0);
-        const traceTotal = traceMinerals.reduce((sum, e) => sum + e.value, 0);
+        // Show functional group totals
+        // If showSodiumSeparately is true, add Salt as its own category first
+        if (showSodiumSeparately && sodiumValue > 0) {
+            children.push({ name: "Salt", value: sodiumValue, color: treemapColors["Sodium"] });
+        }
         
-        if (electrolyteTotal > 0) children.push({ name: "Electrolytes", value: electrolyteTotal, color: treemapColors["Electrolytes"] });
-        if (macroTotal > 0) children.push({ name: "Macro Minerals", value: macroTotal, color: treemapColors["Macro Minerals"] });
-        if (traceTotal > 0) children.push({ name: "Trace Minerals", value: traceTotal, color: treemapColors["Trace Minerals"] });
+        const hydrationTotal = hydrationNerves.reduce((sum, e) => sum + e.value, 0);
+        const bonesTotal = bonesStructure.reduce((sum, e) => sum + e.value, 0);
+        const energyTotal = energyCirculation.reduce((sum, e) => sum + e.value, 0);
+        const growthTotal = growthDefense.reduce((sum, e) => sum + e.value, 0);
+        
+        if (hydrationTotal > 0) children.push({ name: "Hydration & Nerves", value: hydrationTotal, color: treemapColors["Hydration & Nerves"] });
+        if (bonesTotal > 0) children.push({ name: "Bones & Structure", value: bonesTotal, color: treemapColors["Bones & Structure"] });
+        if (energyTotal > 0) children.push({ name: "Energy & Circulation", value: energyTotal, color: treemapColors["Energy & Circulation"] });
+        if (growthTotal > 0) children.push({ name: "Growth & Defense", value: growthTotal, color: treemapColors["Growth & Defense"] });
     } else {
-        // Show individual minerals grouped
-        if (electrolytes.length > 0) {
+        // Show individual minerals grouped by function
+        // If showSodiumSeparately is true, add Salt as its own category first
+        if (showSodiumSeparately && sodiumValue > 0) {
+            children.push({ name: "Salt", value: sodiumValue, color: treemapColors["Sodium"] });
+        }
+        
+        if (hydrationNerves.length > 0) {
             children.push({
-                name: "Electrolytes",
-                children: electrolytes.sort((a, b) => b.value - a.value),
-                color: treemapColors["Electrolytes"]
+                name: "Hydration & Nerves",
+                children: hydrationNerves.sort((a, b) => b.value - a.value),
+                color: treemapColors["Hydration & Nerves"]
             });
         }
-        if (macroMinerals.length > 0) {
+        if (bonesStructure.length > 0) {
             children.push({
-                name: "Macro Minerals",
-                children: macroMinerals.sort((a, b) => b.value - a.value),
-                color: treemapColors["Macro Minerals"]
+                name: "Bones & Structure",
+                children: bonesStructure.sort((a, b) => b.value - a.value),
+                color: treemapColors["Bones & Structure"]
             });
         }
-        if (traceMinerals.length > 0) {
+        if (energyCirculation.length > 0) {
             children.push({
-                name: "Trace Minerals",
-                children: traceMinerals.sort((a, b) => b.value - a.value),
-                color: treemapColors["Trace Minerals"]
+                name: "Energy & Circulation",
+                children: energyCirculation.sort((a, b) => b.value - a.value),
+                color: treemapColors["Energy & Circulation"]
+            });
+        }
+        if (growthDefense.length > 0) {
+            children.push({
+                name: "Growth & Defense",
+                children: growthDefense.sort((a, b) => b.value - a.value),
+                color: treemapColors["Growth & Defense"]
             });
         }
     }
@@ -333,49 +395,50 @@ function buildVitaminsTreemapData(nutrients, showDetails) {
         return { name: "Vitamins", children: [] };
     }
 
-    // Water-soluble vitamins (B vitamins + C)
-    // Note: Different units - we'll normalize to mg for display, noting µg items
-    const waterSoluble = [];
-    if (v.vitaminC > 0) waterSoluble.push({ name: "Vitamin C", value: v.vitaminC, color: treemapColors["Vitamin C"], unit: "mg" });
-    if (v.thiamin > 0) waterSoluble.push({ name: "Thiamin (B1)", value: v.thiamin, color: treemapColors["Thiamin (B1)"], unit: "mg" });
-    if (v.riboflavin > 0) waterSoluble.push({ name: "Riboflavin (B2)", value: v.riboflavin, color: treemapColors["Riboflavin (B2)"], unit: "mg" });
-    if (v.niacin > 0) waterSoluble.push({ name: "Niacin (B3)", value: v.niacin, color: treemapColors["Niacin (B3)"], unit: "mg" });
-    if (v.pantothenicAcid > 0) waterSoluble.push({ name: "Pantothenic (B5)", value: v.pantothenicAcid, color: treemapColors["Pantothenic (B5)"], unit: "mg" });
-    if (v.vitaminB6 > 0) waterSoluble.push({ name: "Vitamin B-6", value: v.vitaminB6, color: treemapColors["Vitamin B-6"], unit: "mg" });
-    if (v.folate > 0) waterSoluble.push({ name: "Folate (B9)", value: v.folate / 1000, color: treemapColors["Folate (B9)"], unit: "mg", actualValue: v.folate, actualUnit: "µg" }); // Convert µg to mg for scale
-    if (v.vitaminB12 > 0) waterSoluble.push({ name: "Vitamin B-12", value: v.vitaminB12 / 1000, color: treemapColors["Vitamin B-12"], unit: "mg", actualValue: v.vitaminB12, actualUnit: "µg" }); // Convert µg to mg
-    if (v.choline > 0) waterSoluble.push({ name: "Choline", value: v.choline, color: treemapColors["Choline"], unit: "mg" });
+    // Functional groupings for vitamins:
+    // 1. Energy & Metabolism: B vitamins (help release energy from food)
+    const energyMetabolism = [];
+    if (v.thiamin > 0) energyMetabolism.push({ name: "Thiamin (B1)", value: v.thiamin, color: treemapColors["Thiamin (B1)"] });
+    if (v.riboflavin > 0) energyMetabolism.push({ name: "Riboflavin (B2)", value: v.riboflavin, color: treemapColors["Riboflavin (B2)"] });
+    if (v.niacin > 0) energyMetabolism.push({ name: "Niacin (B3)", value: v.niacin, color: treemapColors["Niacin (B3)"] });
+    if (v.pantothenicAcid > 0) energyMetabolism.push({ name: "Pantothenic (B5)", value: v.pantothenicAcid, color: treemapColors["Pantothenic (B5)"] });
+    if (v.vitaminB6 > 0) energyMetabolism.push({ name: "Vitamin B-6", value: v.vitaminB6, color: treemapColors["Vitamin B-6"] });
+    if (v.biotin > 0) energyMetabolism.push({ name: "Biotin", value: v.biotin / 1000, color: treemapColors["Biotin"] });
+    if (v.folate > 0) energyMetabolism.push({ name: "Folate (B9)", value: v.folate / 1000, color: treemapColors["Folate (B9)"] });
+    if (v.vitaminB12 > 0) energyMetabolism.push({ name: "Vitamin B-12", value: v.vitaminB12 / 1000, color: treemapColors["Vitamin B-12"] });
+    if (v.choline > 0) energyMetabolism.push({ name: "Choline", value: v.choline, color: treemapColors["Choline"] });
     
-    // Fat-soluble vitamins (A, D, E, K)
-    const fatSoluble = [];
-    if (v.vitaminA > 0) fatSoluble.push({ name: "Vitamin A", value: v.vitaminA / 1000, color: treemapColors["Vitamin A"], unit: "mg", actualValue: v.vitaminA, actualUnit: "µg" }); // Convert µg to mg
-    if (v.vitaminD > 0) fatSoluble.push({ name: "Vitamin D", value: v.vitaminD / 1000, color: treemapColors["Vitamin D"], unit: "mg", actualValue: v.vitaminD, actualUnit: "µg" }); // Convert µg to mg
-    if (v.vitaminE > 0) fatSoluble.push({ name: "Vitamin E", value: v.vitaminE, color: treemapColors["Vitamin E"], unit: "mg" });
-    if (v.vitaminK > 0) fatSoluble.push({ name: "Vitamin K", value: v.vitaminK / 1000, color: treemapColors["Vitamin K"], unit: "mg", actualValue: v.vitaminK, actualUnit: "µg" }); // Convert µg to mg
+    // 2. Growth & Regulation: A, C, D, E, K (immunity, tissues, hormones, protection)
+    const growthRegulation = [];
+    if (v.vitaminA > 0) growthRegulation.push({ name: "Vitamin A", value: v.vitaminA / 1000, color: treemapColors["Vitamin A"] });
+    if (v.vitaminC > 0) growthRegulation.push({ name: "Vitamin C", value: v.vitaminC, color: treemapColors["Vitamin C"] });
+    if (v.vitaminD > 0) growthRegulation.push({ name: "Vitamin D", value: v.vitaminD / 1000, color: treemapColors["Vitamin D"] });
+    if (v.vitaminE > 0) growthRegulation.push({ name: "Vitamin E", value: v.vitaminE, color: treemapColors["Vitamin E"] });
+    if (v.vitaminK > 0) growthRegulation.push({ name: "Vitamin K", value: v.vitaminK / 1000, color: treemapColors["Vitamin K"] });
 
     const children = [];
 
     if (!showDetails) {
-        // Show grouped totals only
-        const waterTotal = waterSoluble.reduce((sum, e) => sum + e.value, 0);
-        const fatTotal = fatSoluble.reduce((sum, e) => sum + e.value, 0);
+        // Show functional group totals
+        const energyTotal = energyMetabolism.reduce((sum, e) => sum + e.value, 0);
+        const growthTotal = growthRegulation.reduce((sum, e) => sum + e.value, 0);
         
-        if (waterTotal > 0) children.push({ name: "Water-Soluble", value: waterTotal, color: treemapColors["Water-Soluble"] });
-        if (fatTotal > 0) children.push({ name: "Fat-Soluble", value: fatTotal, color: treemapColors["Fat-Soluble"] });
+        if (energyTotal > 0) children.push({ name: "Energy & Metabolism", value: energyTotal, color: treemapColors["Energy & Metabolism"] });
+        if (growthTotal > 0) children.push({ name: "Growth & Regulation", value: growthTotal, color: treemapColors["Growth & Regulation"] });
     } else {
-        // Show individual vitamins grouped
-        if (waterSoluble.length > 0) {
+        // Show individual vitamins grouped by function
+        if (energyMetabolism.length > 0) {
             children.push({
-                name: "Water-Soluble",
-                children: waterSoluble.sort((a, b) => b.value - a.value),
-                color: treemapColors["Water-Soluble"]
+                name: "Energy & Metabolism",
+                children: energyMetabolism.sort((a, b) => b.value - a.value),
+                color: treemapColors["Energy & Metabolism"]
             });
         }
-        if (fatSoluble.length > 0) {
+        if (growthRegulation.length > 0) {
             children.push({
-                name: "Fat-Soluble",
-                children: fatSoluble.sort((a, b) => b.value - a.value),
-                color: treemapColors["Fat-Soluble"]
+                name: "Growth & Regulation",
+                children: growthRegulation.sort((a, b) => b.value - a.value),
+                color: treemapColors["Growth & Regulation"]
             });
         }
     }
@@ -429,24 +492,47 @@ function buildMicronutrientsTreemapData(nutrients, showDetails) {
     if (v.vitaminK > 0) fatSolubleVits.push({ name: "Vitamin K", value: v.vitaminK / 1000, color: treemapColors["Vitamin K"] });
 
     if (!showDetails) {
-        // Show grouped totals
-        const electrolyteTotal = electrolytes.reduce((sum, e) => sum + e.value, 0);
-        const macroTotal = macroMinerals.reduce((sum, e) => sum + e.value, 0);
-        const traceTotal = traceMinerals.reduce((sum, e) => sum + e.value, 0);
-        const waterVitTotal = waterSolubleVits.reduce((sum, e) => sum + e.value, 0);
-        const fatVitTotal = fatSolubleVits.reduce((sum, e) => sum + e.value, 0);
+        // Show categories: Salt (if showing separately), Minerals, and Vitamins
+        const sodiumValue = m.sodium || 0;
         
-        if (electrolyteTotal > 0) children.push({ name: "Electrolytes", value: electrolyteTotal, color: treemapColors["Electrolytes"] });
-        if (macroTotal > 0) children.push({ name: "Macro Minerals", value: macroTotal, color: treemapColors["Macro Minerals"] });
-        if (traceTotal > 0) children.push({ name: "Trace Minerals", value: traceTotal, color: treemapColors["Trace Minerals"] });
-        if (waterVitTotal > 0) children.push({ name: "Water-Soluble Vits", value: waterVitTotal, color: treemapColors["Water-Soluble"] });
-        if (fatVitTotal > 0) children.push({ name: "Fat-Soluble Vits", value: fatVitTotal, color: treemapColors["Fat-Soluble"] });
+        // Calculate mineral total (exclude sodium if showing separately)
+        let mineralTotal = 0;
+        if (!showSodiumSeparately) {
+            mineralTotal = electrolytes.reduce((sum, e) => sum + e.value, 0);
+        } else {
+            // Exclude sodium from electrolytes total
+            mineralTotal = electrolytes.filter(e => e.name !== "Sodium").reduce((sum, e) => sum + e.value, 0);
+        }
+        mineralTotal += macroMinerals.reduce((sum, e) => sum + e.value, 0) +
+                       traceMinerals.reduce((sum, e) => sum + e.value, 0);
+        
+        const vitaminTotal = waterSolubleVits.reduce((sum, e) => sum + e.value, 0) +
+                            fatSolubleVits.reduce((sum, e) => sum + e.value, 0);
+        
+        // Add Salt as separate category if toggle is on
+        if (showSodiumSeparately && sodiumValue > 0) {
+            children.push({ name: "Salt", value: sodiumValue, color: treemapColors["Sodium"] });
+        }
+        
+        if (mineralTotal > 0) children.push({ name: "Minerals", value: mineralTotal, color: treemapColors["Minerals"] });
+        if (vitaminTotal > 0) children.push({ name: "Vitamins", value: vitaminTotal, color: treemapColors["Vitamins"] });
     } else {
         // Show individual items grouped
-        if (electrolytes.length > 0) {
+        
+        // Add Salt as separate category first if toggle is on
+        if (showSodiumSeparately && m.sodium > 0) {
+            children.push({ name: "Salt", value: m.sodium, color: treemapColors["Sodium"] });
+        }
+        
+        // Filter sodium from electrolytes if showing separately
+        const filteredElectrolytes = showSodiumSeparately 
+            ? electrolytes.filter(e => e.name !== "Sodium")
+            : electrolytes;
+        
+        if (filteredElectrolytes.length > 0) {
             children.push({
                 name: "Electrolytes",
-                children: electrolytes.sort((a, b) => b.value - a.value),
+                children: filteredElectrolytes.sort((a, b) => b.value - a.value),
                 color: treemapColors["Electrolytes"]
             });
         }
@@ -658,16 +744,15 @@ function renderMacroTreemapStable(containerId, nutrients, showSubtypes) {
             .join("g")
             .attr("transform", d => `translate(${d.x0},${d.y0})`);
 
-        cells.append("rect")
+        const rects = cells.append("rect")
             .attr("class", "treemap-cell")
             .attr("width", d => Math.max(0, d.x1 - d.x0))
             .attr("height", d => Math.max(0, d.y1 - d.y0))
             .attr("fill", d => d.data.color || "#666")
             .attr("rx", 3)
-            .style("cursor", "pointer")
-            .on("mouseover", function() { d3.select(this).style("opacity", 0.8); })
-            .on("mouseout", function() { d3.select(this).style("opacity", 1); });
-
+            .style("cursor", "pointer");
+        
+        addTreemapTooltip(rects, 'g');
         addTreemapLabels(cells);
     } else {
         // Render subdivided blocks within parent positions
@@ -702,6 +787,51 @@ function renderMacroTreemapStable(containerId, nutrients, showSubtypes) {
                 if (nutrients.sugars > 0) childData.push({ name: "Sugars", value: nutrients.sugars, color: treemapColors["Sugars"] });
                 if (nutrients.fiber > 0) childData.push({ name: "Fiber", value: nutrients.fiber, color: treemapColors["Fiber"] });
                 if (nutrients.starch > 0) childData.push({ name: "Starch", value: nutrients.starch, color: treemapColors["Starch"] });
+            } else if (parentName === "Minerals") {
+                // Break down "Minerals" into: Sodium (if showSodiumSeparately), Other Minerals, and Vitamins
+                // Use the total minerals value (from Ash) as the base, not individual mineral sums
+                const m = nutrients.mineralData || {};
+                const v = nutrients.vitaminData || {};
+                const totalMineralsG = nutrients.minerals || 0; // This is the total from Ash (already in grams)
+                
+                // Calculate sodium in grams (mineralData stores in mg)
+                const sodiumG = (m.sodium || 0) / 1000;
+                
+                // Calculate "other minerals" using the total minerals value, not sum of individual minerals
+                // This ensures we don't lose minerals that aren't individually listed (like in Branded foods)
+                let otherMineralsG;
+                if (showSodiumSeparately) {
+                    // Other minerals = total minerals - sodium
+                    otherMineralsG = Math.max(0, totalMineralsG - sodiumG);
+                } else {
+                    // Include all minerals (sodium is part of the total)
+                    otherMineralsG = totalMineralsG;
+                }
+                
+                // Calculate total vitamins in mg (converting µg to mg where needed)
+                // Note: Most vitamins are in mg or µg - we'll display in mg for the macro treemap
+                let vitaminsTotal = 0;
+                for (const [key, val] of Object.entries(v)) {
+                    if (val > 0) {
+                        vitaminsTotal += val; // Already in mg or µg from API
+                    }
+                }
+                const vitaminsG = vitaminsTotal / 1000; // Convert to grams for display
+                
+                // Add Sodium/Salt if showing separately
+                if (showSodiumSeparately && sodiumG > 0) {
+                    childData.push({ name: "Salt", value: sodiumG, color: treemapColors["Sodium"] });
+                }
+                
+                // Add Minerals (other than sodium if showing separately)
+                if (otherMineralsG > 0) {
+                    childData.push({ name: "Minerals", value: otherMineralsG, color: treemapColors["Minerals"] });
+                }
+                
+                // Add Vitamins
+                if (vitaminsG > 0) {
+                    childData.push({ name: "Vitamins", value: vitaminsG, color: treemapColors["Vitamins"] || "#FFA726" });
+                }
             }
 
             if (childData.length > 0) {
@@ -721,38 +851,105 @@ function renderMacroTreemapStable(containerId, nutrients, showSubtypes) {
                     .attr("class", `cells-${parentName}`)
                     .attr("transform", d => `translate(${pos.x0 + 1 + d.x0},${pos.y0 + 1 + d.y0})`);
 
-                cells.append("rect")
+                const childRects = cells.append("rect")
                     .attr("class", "treemap-cell")
                     .attr("width", d => Math.max(0, d.x1 - d.x0))
                     .attr("height", d => Math.max(0, d.y1 - d.y0))
                     .attr("fill", d => d.data.color || pos.color)
                     .attr("rx", 2)
-                    .style("cursor", "pointer")
-                    .on("mouseover", function() { d3.select(this).style("opacity", 0.8); })
-                    .on("mouseout", function() { d3.select(this).style("opacity", 1); });
-
+                    .style("cursor", "pointer");
+                
+                addTreemapTooltip(childRects, 'g');
                 addTreemapLabels(cells);
             } else {
                 // No children, just render parent block
                 const cell = svg.append("g")
                     .attr("transform", `translate(${pos.x0},${pos.y0})`);
 
-                cell.append("rect")
+                const nutrientValue = nutrients[parentName.toLowerCase()] || 0;
+                const singleRect = cell.append("rect")
                     .attr("class", "treemap-cell")
+                    .attr("id", `treemap-${parentName.replace(/[^a-zA-Z0-9]/g, '_')}`)
                     .attr("width", Math.max(0, parentWidth))
                     .attr("height", Math.max(0, parentHeight))
                     .attr("fill", pos.color)
                     .attr("rx", 3)
-                    .style("cursor", "pointer")
-                    .on("mouseover", function() { d3.select(this).style("opacity", 0.8); })
-                    .on("mouseout", function() { d3.select(this).style("opacity", 1); });
-
-                addTreemapLabelsToCell(cell, parentName, nutrients[parentName.toLowerCase()] || 0, parentWidth, parentHeight);
+                    .style("cursor", "pointer");
+                
+                addSingleRectTooltip(singleRect, parentName, nutrientValue, 'g');
+                addTreemapLabelsToCell(cell, parentName, nutrientValue, parentWidth, parentHeight);
             }
         }
     }
 
     return svg;
+}
+
+// Helper to add tooltips and titles to a rect selection (data-bound)
+function addTreemapTooltip(rectSelection, unit = 'g') {
+    const tooltip = document.getElementById('treemapTooltip');
+    
+    rectSelection
+        .attr("id", d => `treemap-${d.data.name.replace(/[^a-zA-Z0-9]/g, '_')}`)
+        .on("mouseenter", function(event, d) {
+            d3.select(this).style("opacity", 0.8);
+            if (tooltip) {
+                const valueText = `${d.value.toFixed(2)}${unit}`;
+                tooltip.innerHTML = `<strong>${d.data.name}</strong><br>${valueText}`;
+                tooltip.style.opacity = 1;
+                tooltip.style.left = (event.clientX + 15) + 'px';
+                tooltip.style.top = (event.clientY - 10) + 'px';
+            }
+        })
+        .on("mousemove", function(event) {
+            if (tooltip) {
+                tooltip.style.left = (event.clientX + 15) + 'px';
+                tooltip.style.top = (event.clientY - 10) + 'px';
+            }
+        })
+        .on("mouseleave", function() {
+            d3.select(this).style("opacity", 1);
+            if (tooltip) {
+                tooltip.style.opacity = 0;
+            }
+        });
+    
+    // Add SVG title for accessibility and SVG viewer tooltips
+    rectSelection.append("title")
+        .text(d => `${d.data.name}: ${d.value.toFixed(2)}${unit}`);
+}
+
+// Helper to add tooltips and titles to a single rect (not data-bound)
+function addSingleRectTooltip(rectSelection, name, value, unit = 'g') {
+    const tooltip = document.getElementById('treemapTooltip');
+    
+    rectSelection
+        .on("mouseenter", function(event) {
+            d3.select(this).style("opacity", 0.8);
+            if (tooltip) {
+                const valueText = `${value.toFixed(2)}${unit}`;
+                tooltip.innerHTML = `<strong>${name}</strong><br>${valueText}`;
+                tooltip.style.opacity = 1;
+                tooltip.style.left = (event.clientX + 15) + 'px';
+                tooltip.style.top = (event.clientY - 10) + 'px';
+            }
+        })
+        .on("mousemove", function(event) {
+            if (tooltip) {
+                tooltip.style.left = (event.clientX + 15) + 'px';
+                tooltip.style.top = (event.clientY - 10) + 'px';
+            }
+        })
+        .on("mouseleave", function() {
+            d3.select(this).style("opacity", 1);
+            if (tooltip) {
+                tooltip.style.opacity = 0;
+            }
+        });
+    
+    // Add SVG title for accessibility and SVG viewer tooltips
+    rectSelection.append("title")
+        .text(`${name}: ${value.toFixed(2)}${unit}`);
 }
 
 // Helper to add labels to treemap cells
@@ -855,20 +1052,47 @@ function renderTreemap(containerId, data, title, unit = 'g') {
         .join("g")
         .attr("transform", d => `translate(${d.x0},${d.y0})`);
 
+    // Get tooltip element
+    const tooltip = document.getElementById('treemapTooltip');
+
     // Rectangles
-    cells.append("rect")
+    const rects = cells.append("rect")
         .attr("class", "treemap-cell")
+        .attr("id", d => `treemap-${d.data.name.replace(/[^a-zA-Z0-9]/g, '_')}`)
         .attr("width", d => Math.max(0, d.x1 - d.x0))
         .attr("height", d => Math.max(0, d.y1 - d.y0))
         .attr("fill", d => d.data.color || "#666")
         .attr("rx", 3)
         .style("cursor", "pointer")
-        .on("mouseover", function(event, d) {
+        .on("mouseenter", function(event, d) {
             d3.select(this).style("opacity", 0.8);
+            // Show tooltip
+            if (tooltip) {
+                const valueText = `${d.value.toFixed(2)}${unit}`;
+                tooltip.innerHTML = `<strong>${d.data.name}</strong><br>${valueText}`;
+                tooltip.style.opacity = 1;
+                tooltip.style.left = (event.clientX + 15) + 'px';
+                tooltip.style.top = (event.clientY - 10) + 'px';
+            }
         })
-        .on("mouseout", function(event, d) {
+        .on("mousemove", function(event, d) {
+            // Update tooltip position on move
+            if (tooltip) {
+                tooltip.style.left = (event.clientX + 15) + 'px';
+                tooltip.style.top = (event.clientY - 10) + 'px';
+            }
+        })
+        .on("mouseleave", function(event, d) {
             d3.select(this).style("opacity", 1);
+            // Hide tooltip
+            if (tooltip) {
+                tooltip.style.opacity = 0;
+            }
         });
+
+    // Add SVG title element for accessibility and SVG viewer tooltips
+    rects.append("title")
+        .text(d => `${d.data.name}: ${d.value.toFixed(2)}${unit}`);
 
     // Labels - only show if cell is big enough
     cells.each(function(d) {
@@ -1068,35 +1292,41 @@ function parseNutrientsFromUSDA(foodData) {
 
     // Extract individual minerals (in mg, will convert to display)
     const mineralData = {
-        // Electrolytes
+        // Hydration & Nerves
         sodium: getNutrient('Sodium, Na'),
         potassium: getNutrient('Potassium, K'),
-        // Macro minerals
+        chloride: getNutrient('Chloride, Cl'),
+        // Bones & Structure
         calcium: getNutrient('Calcium, Ca'),
         phosphorus: getNutrient('Phosphorus, P'),
         magnesium: getNutrient('Magnesium, Mg'),
-        // Trace minerals
+        // Energy & Circulation
         iron: getNutrient('Iron, Fe'),
-        zinc: getNutrient('Zinc, Zn'),
         copper: getNutrient('Copper, Cu'),
+        chromium: getNutrient('Chromium, Cr'),
         manganese: getNutrient('Manganese, Mn'),
-        selenium: getNutrient('Selenium, Se')  // Note: often in µg
+        molybdenum: getNutrient('Molybdenum, Mo'),
+        // Growth & Defense
+        zinc: getNutrient('Zinc, Zn'),
+        selenium: getNutrient('Selenium, Se'),
+        iodine: getNutrient('Iodine, I')
     };
 
     // Extract vitamins
     const vitaminData = {
-        // Water-soluble vitamins
-        vitaminC: getNutrient('Vitamin C, total ascorbic acid'),  // mg
+        // Energy & Metabolism (B vitamins)
         thiamin: getNutrient('Thiamin'),  // mg (B1)
         riboflavin: getNutrient('Riboflavin'),  // mg (B2)
         niacin: getNutrient('Niacin'),  // mg (B3)
         pantothenicAcid: getNutrient('Pantothenic acid'),  // mg (B5)
         vitaminB6: getNutrient('Vitamin B-6'),  // mg
+        biotin: getNutrient('Biotin'),  // µg (B7)
         folate: getNutrient('Folate, total'),  // µg (B9)
         vitaminB12: getNutrient('Vitamin B-12'),  // µg
         choline: getNutrient('Choline, total'),  // mg
-        // Fat-soluble vitamins
+        // Growth & Regulation
         vitaminA: getNutrient('Vitamin A, RAE'),  // µg
+        vitaminC: getNutrient('Vitamin C, total ascorbic acid'),  // mg
         vitaminD: getNutrient('Vitamin D (D2 + D3)'),  // µg
         vitaminE: getNutrient('Vitamin E (alpha-tocopherol)'),  // mg
         vitaminK: getNutrient('Vitamin K (phylloquinone)')  // µg
@@ -1186,6 +1416,18 @@ document.addEventListener('DOMContentLoaded', () => {
         subtypesToggle.addEventListener('change', (e) => {
             showSubtypes = e.target.checked;
             updateTreemaps();
+        });
+    }
+
+    // Listen for "Show sodium separately" toggle from Sankey side panel
+    const showSodiumToggle = document.getElementById('toggleShowSodium');
+    if (showSodiumToggle) {
+        showSodiumToggle.addEventListener('change', (e) => {
+            showSodiumSeparately = e.target.checked;
+            // Only update treemaps if we have data
+            if (currentTreemapData) {
+                updateTreemaps();
+            }
         });
     }
 

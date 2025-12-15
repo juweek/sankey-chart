@@ -105,6 +105,7 @@ async function handleFood(url, path, env) {
   const isRaw = path.endsWith('/raw');
   const foodId = path.replace('/api/food/', '').replace('/raw', '');
   const reverseHierarchy = url.searchParams.get('reverseHierarchy') === 'true';
+  const showSodium = url.searchParams.get('showSodium') === 'true';
 
   const foodUrl = `${USDA_BASE_URL}/food/${foodId}?api_key=${env.USDA_API_KEY}`;
   
@@ -128,7 +129,7 @@ async function handleFood(url, path, env) {
     });
   }
 
-  const sankeyData = transformToSankey(foodData, reverseHierarchy);
+  const sankeyData = transformToSankey(foodData, reverseHierarchy, showSodium);
 
   return new Response(JSON.stringify(sankeyData), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -152,7 +153,7 @@ async function handleFood(url, path, env) {
  *   Water → Total
  *   Minerals → Total
  */
-function transformToSankey(foodData, reverseHierarchy = false) {
+function transformToSankey(foodData, reverseHierarchy = false, showSodium = false) {
   const nutrients = foodData.foodNutrients || [];
 
   // Helper to get nutrient amount
@@ -207,22 +208,32 @@ function transformToSankey(foodData, reverseHierarchy = false) {
     minerals = Math.max(0, 100 - water - protein - totalFat - carbs);
   }
 
+  // Extract sodium (in mg, convert to grams for Sankey)
+  const sodiumMg = getNutrient('Sodium, Na');
+  const sodium = sodiumMg / 1000; // Convert mg to grams
+  const otherMinerals = Math.max(0, minerals - sodium);
+
   // Log values for debugging
   console.log('Sankey Data:', {
-    reverseHierarchy,
-    water, protein, totalFat, carbs, minerals,
+    reverseHierarchy, showSodium,
+    water, protein, totalFat, carbs, minerals, sodium, otherMinerals,
     satFat, monoFat, polyFat, transFat, otherFats,
     sugars, fiber, starch
   });
 
-  // Same node structure for both modes
-  // Amino Acids removed (1:1 with Protein)
-  // Fatty Acids removed (Fat is now terminal in normal mode)
-  const nodeNames = [
-    "Total", "Water", "Protein", "Fat", "Carbs", "Minerals",
-    "Sat.", "Mono", "Poly", "Trans", "Other Fats",
-    "Sugars", "Fiber", "Starch"
-  ];
+  // Node names - conditionally include Sodium if showSodium is true
+  // When showSodium is false, just show "Minerals" as a single node
+  const nodeNames = showSodium
+    ? [
+        "Total", "Water", "Protein", "Fat", "Carbs", "Sodium", "Minerals",
+        "Sat.", "Mono", "Poly", "Trans", "Other Fats",
+        "Sugars", "Fiber", "Starch"
+      ]
+    : [
+        "Total", "Water", "Protein", "Fat", "Carbs", "Minerals",
+        "Sat.", "Mono", "Poly", "Trans", "Other Fats",
+        "Sugars", "Fiber", "Starch"
+      ];
 
   const nodes = nodeNames.map((name, i) => ({ node: i, name }));
   const nodeIndex = {};
@@ -242,7 +253,7 @@ function transformToSankey(foodData, reverseHierarchy = false) {
     // Carbs → Sugars/Fiber/Starch → Total
     // Protein → Total
     // Water → Total
-    // Minerals → Total
+    // Minerals (or Sodium + Minerals if showSodium) → Total
 
     // Fat to subtypes
     addLink("Fat", "Sat.", satFat);
@@ -267,7 +278,14 @@ function transformToSankey(foodData, reverseHierarchy = false) {
     addLink("Fiber", "Total", fiber);
     addLink("Starch", "Total", starch);
     addLink("Water", "Total", water);
-    addLink("Minerals", "Total", minerals);
+    
+    // Minerals - conditional on showSodium
+    if (showSodium) {
+      addLink("Sodium", "Total", sodium);
+      addLink("Minerals", "Total", otherMinerals);
+    } else {
+      addLink("Minerals", "Total", minerals);
+    }
 
   } else {
     // Normal Macro → Detail view:
@@ -278,7 +296,14 @@ function transformToSankey(foodData, reverseHierarchy = false) {
     // Total to terminal nodes
     addLink("Total", "Water", water);
     addLink("Total", "Protein", protein);
-    addLink("Total", "Minerals", minerals);
+    
+    // Minerals - conditional on showSodium
+    if (showSodium) {
+      addLink("Total", "Sodium", sodium);
+      addLink("Total", "Minerals", otherMinerals);
+    } else {
+      addLink("Total", "Minerals", minerals);
+    }
 
     // Total to fat subtypes, then subtypes to Fat (terminal)
     addLink("Total", "Sat.", satFat);

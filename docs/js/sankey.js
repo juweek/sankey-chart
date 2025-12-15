@@ -184,7 +184,8 @@ const nodeColor = {
     "Sugars": "#CC9A2E",
     "Fiber": "#CC9A2E",
     "Starch": "#CC9A2E",
-    "Minerals": "#9370DB",
+    "Sodium": "#8B5FCF",      // Darker purple for sodium
+    "Minerals": "#9370DB",    // Purple for minerals
 };
 
 // Base link colors - we'll look up both directions
@@ -192,6 +193,7 @@ const linkColorBase = {
     "Total-Water": "#658394",
     "Total-Protein": "#67B080",
     "Total-Carbs": "#CC9A2E",
+    "Total-Sodium": "#8B5FCF",
     "Total-Minerals": "#9370DB",
     // Fat subtypes to Fat (normal mode: Total → Sat/Mono/Poly → Fat)
     "Sat.-Fat": "#B22222",
@@ -252,17 +254,19 @@ let currentFoodName = null;
 let showValueLabels = false;
 let reverseFlow = false;
 let reverseHierarchy = false;
+let showSodium = false;  // Whether to show sodium as separate node
 let nodeSortMode = 'auto';  // 'auto', 'value', or 'custom'
 
 // Custom order for end nodes when custom mode is selected
 const customEndNodeOrder = {
     "Water": 0,
-    "Minerals": 1,
-    "Protein": 2,
-    "Fat": 3,
-    "Sugars": 4,
-    "Fiber": 5,
-    "Starch": 6,
+    "Sodium": 1,
+    "Minerals": 2,
+    "Protein": 3,
+    "Fat": 4,
+    "Sugars": 5,
+    "Fiber": 6,
+    "Starch": 7,
     // Middle column nodes - keep them grouped
     "Total": -10,
     "Carbs": 10,
@@ -374,7 +378,7 @@ async function updateSankey(foodId) {
             `);
 
         // Fetch data from API
-        const url = `${API_BASE_URL}/api/food/${foodId}?reverseHierarchy=${reverseHierarchy}`;
+        const url = `${API_BASE_URL}/api/food/${foodId}?reverseHierarchy=${reverseHierarchy}&showSodium=${showSodium}`;
         const response = await fetch(url);
         if (!response.ok) {
             let message = `Failed to fetch data (HTTP ${response.status})`;
@@ -809,6 +813,15 @@ if (toggleReverseHierarchyEl) {
         reverseHierarchy = !!e.target.checked;
         // Re-fetch data with new hierarchy mode (margins stay the same)
         applyFlowMargins();
+        if (currentFoodId) updateSankey(currentFoodId);
+    });
+}
+
+// Show sodium toggle (shows sodium as separate node from minerals)
+const toggleShowSodiumEl = document.getElementById('toggleShowSodium');
+if (toggleShowSodiumEl) {
+    toggleShowSodiumEl.addEventListener('change', (e) => {
+        showSodium = !!e.target.checked;
         if (currentFoodId) updateSankey(currentFoodId);
     });
 }
