@@ -49,6 +49,10 @@
                     <input class="form-check-input" type="checkbox" id="toggleShowSodium">
                     <label class="form-check-label" for="toggleShowSodium">Show sodium separately</label>
                 </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="toggleShowFatBreakdown" checked>
+                    <label class="form-check-label" for="toggleShowFatBreakdown">Show fat breakdown</label>
+                </div>
                 <div class="mt-2">
                     <label class="form-label mb-1" style="font-size: 0.85rem;">Node Ordering</label>
                     <select class="form-select form-select-sm" id="nodeSortMode">
@@ -120,6 +124,12 @@
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="treemap-tab" data-bs-toggle="tab" data-bs-target="#treemapPanel" type="button" role="tab">Treemaps</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="bargraph-tab" data-bs-toggle="tab" data-bs-target="#bargraphPanel" type="button" role="tab">% Daily Value</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="radar-tab" data-bs-toggle="tab" data-bs-target="#radarPanel" type="button" role="tab">Radar Chart</button>
                     </li>
                 </ul>
 
@@ -232,6 +242,265 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Bar Graphs Tab (% Daily Value) -->
+                    <div class="tab-pane fade" id="bargraphPanel" role="tabpanel">
+                        <div class="choropleth_graphic_area">
+                            <h4 id="bargraph_graphTitle" class="text-center mb-3">% Daily Value</h4>
+                            <p id="bargraph_graphSubhead" class="text-center mb-4">Nutrient amounts as percentage of recommended daily intake</p>
+                            
+                            <!-- DRV Profile Selector -->
+                            <div class="drv-profile-selector d-flex justify-content-center gap-3 mb-4 flex-wrap align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="drvAge" class="form-label mb-0">Age:</label>
+                                    <select class="form-select form-select-sm" id="drvAge" style="width: auto;">
+                                        <option value="child">1-3 years</option>
+                                        <option value="child4-8">4-8 years</option>
+                                        <option value="child9-13">9-13 years</option>
+                                        <option value="teen14-18">14-18 years</option>
+                                        <option value="adult" selected>19-50 years</option>
+                                        <option value="senior">51+ years</option>
+                                    </select>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="drvSex" class="form-label mb-0">Sex:</label>
+                                    <select class="form-select form-select-sm" id="drvSex" style="width: auto;">
+                                        <option value="male" selected>Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="drvCondition" class="form-label mb-0">Condition:</label>
+                                    <select class="form-select form-select-sm" id="drvCondition" style="width: auto;">
+                                        <option value="none" selected>None</option>
+                                        <option value="pregnant">Pregnant</option>
+                                        <option value="lactating">Lactating</option>
+                                    </select>
+                                </div>
+                                <div class="form-check form-switch ms-3">
+                                    <input class="form-check-input" type="checkbox" id="drvShowGroups">
+                                    <label class="form-check-label" for="drvShowGroups">Group by function</label>
+                                </div>
+                            </div>
+
+                            <!-- Bar Graph Tooltip -->
+                            <div id="bargraphTooltip"></div>
+
+                            <div class="drv-sections-wrapper">
+                                <!-- Macronutrients Section -->
+                                <div class="drv-section" data-section="macros">
+                                    <div class="drv-section-header" onclick="toggleDRVSection(this)">
+                                        <span class="drv-collapse-icon">▼</span>
+                                        <span class="drv-section-name">Macronutrients</span>
+                                        <button class="btn btn-outline-secondary btn-sm download-btn" onclick="event.stopPropagation(); downloadDRVSection('drvMacros', 'macros')">⬇ SVG</button>
+                                    </div>
+                                    <div class="drv-section-content">
+                                        <div id="drvMacros" class="drv-bars-container"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Carbs Subtypes Section -->
+                                <div class="drv-section" data-section="carbs">
+                                    <div class="drv-section-header" onclick="toggleDRVSection(this)">
+                                        <span class="drv-collapse-icon">▼</span>
+                                        <span class="drv-section-name">Carbs Breakdown</span>
+                                        <button class="btn btn-outline-secondary btn-sm download-btn" onclick="event.stopPropagation(); downloadDRVSection('drvCarbSubtypes', 'carbs')">⬇ SVG</button>
+                                    </div>
+                                    <div class="drv-section-content">
+                                        <div id="drvCarbSubtypes" class="drv-bars-container"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Fat Subtypes Section -->
+                                <div class="drv-section" data-section="fat">
+                                    <div class="drv-section-header" onclick="toggleDRVSection(this)">
+                                        <span class="drv-collapse-icon">▼</span>
+                                        <span class="drv-section-name">Fat Breakdown</span>
+                                        <button class="btn btn-outline-secondary btn-sm download-btn" onclick="event.stopPropagation(); downloadDRVSection('drvFatSubtypes', 'fat')">⬇ SVG</button>
+                                    </div>
+                                    <div class="drv-section-content">
+                                        <div id="drvFatSubtypes" class="drv-bars-container"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Minerals Section (full width) -->
+                                <div class="drv-section full-width" data-section="minerals">
+                                    <div class="drv-section-header" onclick="toggleDRVSection(this)">
+                                        <span class="drv-collapse-icon">▼</span>
+                                        <span class="drv-section-name">Minerals</span>
+                                        <button class="btn btn-outline-secondary btn-sm download-btn" onclick="event.stopPropagation(); downloadDRVSection('drvMinerals', 'minerals')">⬇ SVG</button>
+                                    </div>
+                                    <div class="drv-section-content">
+                                        <div id="drvMinerals" class="drv-bars-container"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Vitamins Section (full width) -->
+                                <div class="drv-section full-width" data-section="vitamins">
+                                    <div class="drv-section-header" onclick="toggleDRVSection(this)">
+                                        <span class="drv-collapse-icon">▼</span>
+                                        <span class="drv-section-name">Vitamins</span>
+                                        <button class="btn btn-outline-secondary btn-sm download-btn" onclick="event.stopPropagation(); downloadDRVSection('drvVitamins', 'vitamins')">⬇ SVG</button>
+                                    </div>
+                                    <div class="drv-section-content">
+                                        <div id="drvVitamins" class="drv-bars-container"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- DRV Sources -->
+                            <div class="drv-sources">
+                                <div class="drv-sources-title">Daily Reference Values Sources:</div>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    <li><a href="https://www.fda.gov/food/new-nutrition-facts-label/daily-value-new-nutrition-and-supplement-facts-labels" target="_blank" rel="noopener">FDA Daily Value Guidelines</a></li>
+                                    <li><a href="https://ods.od.nih.gov/HealthInformation/nutrientrecommendations.aspx" target="_blank" rel="noopener">NIH Nutrient Recommendations (DRI Tables)</a></li>
+                                    <li><a href="https://www.ncbi.nlm.nih.gov/books/NBK56068/table/summarytables.t2/" target="_blank" rel="noopener">Institute of Medicine - Dietary Reference Intakes</a></li>
+                                </ul>
+                            </div>
+
+                            <div id="bargraph_graphSource" class="text-center mt-3">
+                                Source: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer">USDA FoodData Database</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Radar Chart Tab -->
+                    <div class="tab-pane fade" id="radarPanel" role="tabpanel">
+                        <div class="choropleth_graphic_area">
+                            <h4 id="radar_graphTitle" class="text-center mb-3">Nutrient Radar Chart</h4>
+                            <p id="radar_graphSubhead" class="text-center mb-4">Compare nutrient values as % of Daily Reference Value</p>
+                            
+                            <!-- Radar Chart Options -->
+                            <div class="radar-options d-flex justify-content-center gap-3 mb-4 flex-wrap align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="radarPreset" class="form-label mb-0">View:</label>
+                                    <select class="form-select form-select-sm" id="radarPreset" style="width: auto;">
+                                        <option value="macros" selected>Macronutrients</option>
+                                        <option value="vitamins">Vitamins</option>
+                                        <option value="minerals">Minerals</option>
+                                        <option value="all">All Nutrients</option>
+                                        <option value="custom">Custom</option>
+                                    </select>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="radarAge" class="form-label mb-0">Age:</label>
+                                    <select class="form-select form-select-sm" id="radarAge" style="width: auto;">
+                                        <option value="child">1-3 years</option>
+                                        <option value="child4-8">4-8 years</option>
+                                        <option value="child9-13">9-13 years</option>
+                                        <option value="teen14-18">14-18 years</option>
+                                        <option value="adult" selected>19-50 years</option>
+                                        <option value="senior">51+ years</option>
+                                    </select>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="radarSex" class="form-label mb-0">Sex:</label>
+                                    <select class="form-select form-select-sm" id="radarSex" style="width: auto;">
+                                        <option value="male" selected>Male</option>
+                                        <option value="female">Female</option>
+                                    </select>
+                                </div>
+                                <div class="form-check form-switch ms-3">
+                                    <input class="form-check-input" type="checkbox" id="radarRoundStrokes" checked>
+                                    <label class="form-check-label" for="radarRoundStrokes">Smooth lines</label>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <label for="radarMaxValue" class="form-label mb-0">Scale:</label>
+                                    <select class="form-select form-select-sm" id="radarMaxValue" style="width: auto;">
+                                        <option value="0.5">50% DRV</option>
+                                        <option value="1" selected>100% DRV</option>
+                                        <option value="1.5">150% DRV</option>
+                                        <option value="2">200% DRV</option>
+                                    </select>
+                                </div>
+                                <button id="downloadRadarSvg" class="btn btn-outline-secondary btn-sm" disabled>
+                                    ⬇ Download SVG
+                                </button>
+                            </div>
+
+                            <!-- Custom Axes Selector (hidden by default) -->
+                            <div id="radarCustomAxes" class="radar-custom-axes mb-4" style="display: none;">
+                                <div class="custom-axes-grid">
+                                    <div class="axis-group">
+                                        <strong>Macros:</strong>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="protein" checked> Protein</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="fat"> Fat</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="carbs" checked> Carbs</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="fiber" checked> Fiber</label>
+                                    </div>
+                                    <div class="axis-group">
+                                        <strong>Fat Breakdown:</strong>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="satFat"> Saturated Fat</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="monoFat"> Monounsaturated Fat</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="polyFat"> Polyunsaturated Fat</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="transFat"> Trans Fat</label>
+                                    </div>
+                                    <div class="axis-group">
+                                        <strong>Carb Breakdown:</strong>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="sugars"> Sugars</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="starch"> Starch</label>
+                                    </div>
+                                    <div class="axis-group">
+                                        <strong>Minerals:</strong>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="sodium"> Sodium</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="potassium"> Potassium</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="calcium"> Calcium</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="iron"> Iron</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="magnesium"> Magnesium</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="phosphorus"> Phosphorus</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="zinc"> Zinc</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="copper"> Copper</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="manganese"> Manganese</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="selenium"> Selenium</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="chromium"> Chromium</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="iodine"> Iodine</label>
+                                    </div>
+                                    <div class="axis-group">
+                                        <strong>Vitamins:</strong>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="vitaminA"> Vitamin A</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="vitaminC"> Vitamin C</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="vitaminD"> Vitamin D</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="vitaminE"> Vitamin E</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="vitaminK"> Vitamin K</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="thiamin"> Thiamin (B1)</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="riboflavin"> Riboflavin (B2)</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="niacin"> Niacin (B3)</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="vitaminB6"> Vitamin B6</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="folate"> Folate</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="vitaminB12"> Vitamin B12</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="biotin"> Biotin</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="pantothenicAcid"> Pantothenic Acid</label>
+                                        <label><input type="checkbox" class="radar-axis-toggle" data-axis="choline"> Choline</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Radar Chart Tooltip -->
+                            <div id="radarTooltip"></div>
+
+                            <!-- Radar Chart Container -->
+                            <div class="row justify-content-center">
+                                <div class="col-12 col-lg-10">
+                                    <div id="radarChartContainer" class="radar-chart-container"></div>
+                                </div>
+                            </div>
+
+                            <!-- Legend -->
+                            <div id="radarLegend" class="radar-legend text-center mt-3"></div>
+
+                            <div class="radar-sources mt-4">
+                                <div class="radar-sources-title">Daily Reference Values based on:</div>
+                                <ul style="margin: 0; padding-left: 20px;">
+                                    <li><a href="https://www.fda.gov/food/new-nutrition-facts-label/daily-value-new-nutrition-and-supplement-facts-labels" target="_blank" rel="noopener">FDA Daily Value Guidelines</a></li>
+                                    <li><a href="https://ods.od.nih.gov/HealthInformation/nutrientrecommendations.aspx" target="_blank" rel="noopener">NIH Nutrient Recommendations</a></li>
+                                </ul>
+                            </div>
+
+                            <div id="radar_graphSource" class="text-center mt-3">
+                                Source: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer">USDA FoodData Database</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -242,6 +511,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
     <script src="js/sankey.js"></script>
     <script src="js/treemap.js"></script>
+    <script src="js/bargraph.js"></script>
+    <script src="js/radar.js"></script>
     <div id="toastContainer" class="toast-container"></div>
 </body>
 </html>

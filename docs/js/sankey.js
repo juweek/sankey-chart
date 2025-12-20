@@ -188,6 +188,30 @@ const nodeColor = {
     "Minerals": "#9370DB",    // Purple for minerals
 };
 
+// Text colors for node labels
+const nodeTextColor = {
+    "Total": "#4A5568",
+    "Water": "#4781A3",
+    "Protein": "#419162",
+    "Fat": "#B12424",
+    "Sat.": "#B12424",
+    "Mono": "#B12424",
+    "Poly": "#B12424",
+    "Trans": "#B12424",
+    "Other Fats": "#B12424",
+    "Carbs": "#9C7522",
+    "Sugars": "#9C7522",
+    "Fiber": "#9C7522",
+    "Starch": "#9C7522",
+    "Sodium": "#5D39A7",
+    "Minerals": "#5D39A7",
+};
+
+// Get text color for a node
+function getNodeTextColor(nodeName) {
+    return nodeTextColor[nodeName] || "#333";
+}
+
 // Base link colors - we'll look up both directions
 const linkColorBase = {
     "Total-Water": "#658394",
@@ -195,6 +219,7 @@ const linkColorBase = {
     "Total-Carbs": "#CC9A2E",
     "Total-Sodium": "#8B5FCF",
     "Total-Minerals": "#9370DB",
+    "Total-Fat": "#B22222",  // Direct link when fat breakdown is disabled
     // Fat subtypes to Fat (normal mode: Total → Sat/Mono/Poly → Fat)
     "Sat.-Fat": "#B22222",
     "Mono-Fat": "#B22222",
@@ -255,6 +280,7 @@ let showValueLabels = false;
 let reverseFlow = false;
 let reverseHierarchy = false;
 let showSodium = false;  // Whether to show sodium as separate node
+let showFatBreakdown = true;  // Whether to show fat breakdown (Sat, Mono, Poly, Trans)
 let nodeSortMode = 'auto';  // 'auto', 'value', or 'custom'
 
 // Custom order for end nodes when custom mode is selected
@@ -378,7 +404,7 @@ async function updateSankey(foodId) {
             `);
 
         // Fetch data from API
-        const url = `${API_BASE_URL}/api/food/${foodId}?reverseHierarchy=${reverseHierarchy}&showSodium=${showSodium}`;
+        const url = `${API_BASE_URL}/api/food/${foodId}?reverseHierarchy=${reverseHierarchy}&showSodium=${showSodium}&showFatBreakdown=${showFatBreakdown}`;
         const response = await fetch(url);
         if (!response.ok) {
             let message = `Failed to fetch data (HTTP ${response.status})`;
@@ -659,9 +685,27 @@ async function updateSankey(foodId) {
                     return nodeCenter < width / 2 ? "start" : "end";
                 }
             })
-            .text(d => formatNodeLabel(d))
-            .style("fill", "#333")
-            .style("display", d => shouldShowLabel(d) ? null : "none");
+            .style("fill", d => getNodeTextColor(d.name))
+            .style("display", d => shouldShowLabel(d) ? null : "none")
+            .each(function(d) {
+                const textEl = d3.select(this);
+                textEl.selectAll("*").remove(); // Clear existing content
+                
+                // Add bold name
+                textEl.append("tspan")
+                    .attr("class", "node-name")
+                    .style("font-weight", "bold")
+                    .text(d.name.toUpperCase());
+                
+                // Add normal weight value if toggle is on
+                if (showValueLabels && typeof d.value === 'number') {
+                    textEl.append("tspan")
+                        .attr("class", "node-value")
+                        .style("font-weight", "normal")
+                        .style("font-size", "0.85em")
+                        .text(` (${d.value.toFixed(1)}g)`);
+                }
+            });
 
         // Update title and subhead will be handled by the click handler
         const dlBtn = document.getElementById('downloadSvgBtn');
@@ -773,10 +817,11 @@ if (downloadBtn) {
 
 // Format node label based on toggle
 function formatNodeLabel(d) {
+    const upperName = d.name.toUpperCase();
     if (showValueLabels && typeof d.value === 'number') {
-        return `${d.name} (${d.value.toFixed(1)}g)`;
+        return `${upperName} (${d.value.toFixed(1)}g)`;
     }
-    return d.name;
+    return upperName;
 }
 
 function shouldShowLabel(d) {
@@ -791,8 +836,26 @@ if (toggleValueLabelsEl) {
         showValueLabels = !!e.target.checked;
         // Update existing labels without full re-render
         d3.selectAll('#sankeyDiagram_my_dataviz .node text')
-            .text(d => formatNodeLabel(d))
-            .style("display", d => shouldShowLabel(d) ? null : "none");
+            .style("display", d => shouldShowLabel(d) ? null : "none")
+            .each(function(d) {
+                const textEl = d3.select(this);
+                textEl.selectAll("*").remove(); // Clear existing content
+                
+                // Add bold name
+                textEl.append("tspan")
+                    .attr("class", "node-name")
+                    .style("font-weight", "bold")
+                    .text(d.name.toUpperCase());
+                
+                // Add normal weight value if toggle is on
+                if (showValueLabels && typeof d.value === 'number') {
+                    textEl.append("tspan")
+                        .attr("class", "node-value")
+                        .style("font-weight", "normal")
+                        .style("font-size", "0.85em")
+                        .text(` (${d.value.toFixed(1)}g)`);
+                }
+            });
     });
 }
 
@@ -822,6 +885,15 @@ const toggleShowSodiumEl = document.getElementById('toggleShowSodium');
 if (toggleShowSodiumEl) {
     toggleShowSodiumEl.addEventListener('change', (e) => {
         showSodium = !!e.target.checked;
+        if (currentFoodId) updateSankey(currentFoodId);
+    });
+}
+
+// Show fat breakdown toggle (shows Sat, Mono, Poly, Trans as separate nodes)
+const toggleShowFatBreakdownEl = document.getElementById('toggleShowFatBreakdown');
+if (toggleShowFatBreakdownEl) {
+    toggleShowFatBreakdownEl.addEventListener('change', (e) => {
+        showFatBreakdown = !!e.target.checked;
         if (currentFoodId) updateSankey(currentFoodId);
     });
 }
@@ -923,11 +995,15 @@ function updateGraphDetails(foodId, foodDescription) {
     const usdaLink = `https://fdc.nal.usda.gov/fdc-app.html#/food-details/${foodId}/nutrients`;
     const sourceHtml = `Source: <a href="${usdaLink}" target="_blank" rel="noopener noreferrer">USDA FoodData Central Database</a>`;
     
-    // Update both Sankey and Treemap source links to the same URL
+    // Update Sankey, Treemap, and Bar Graph source links to the same URL
     document.getElementById("sankeyDiagram_graphSource").innerHTML = sourceHtml;
     const treemapSource = document.getElementById("treemap_graphSource");
     if (treemapSource) {
         treemapSource.innerHTML = sourceHtml;
+    }
+    const bargraphSource = document.getElementById("bargraph_graphSource");
+    if (bargraphSource) {
+        bargraphSource.innerHTML = sourceHtml;
     }
 }
 

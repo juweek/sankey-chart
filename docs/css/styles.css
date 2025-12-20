@@ -632,3 +632,557 @@ body {
         font-size: 8px;
     }
 }
+
+/* ===== DRV Bar Graphs ===== */
+.drv-profile-selector {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 12px 20px;
+    border-radius: 8px;
+}
+
+.drv-sections-wrapper {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+}
+
+.drv-section {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.drv-section.full-width {
+    grid-column: 1 / -1;
+}
+
+.drv-section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.03);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.drv-section-header:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.drv-collapse-icon {
+    font-size: 10px;
+    color: #6b7280;
+    transition: transform 0.2s;
+    width: 12px;
+}
+
+.drv-section.collapsed .drv-collapse-icon {
+    transform: rotate(-90deg);
+}
+
+.drv-section-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+    flex: 1;
+}
+
+.drv-section-header .download-btn {
+    font-size: 11px;
+    padding: 2px 8px;
+}
+
+.drv-section-content {
+    padding: 16px;
+    transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+    max-height: 2000px;
+    opacity: 1;
+}
+
+.drv-section.collapsed .drv-section-content {
+    max-height: 0;
+    padding: 0 16px;
+    opacity: 0;
+    overflow: hidden;
+}
+
+.drv-bars-container {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* Full-width sections (Minerals, Vitamins): 2-column layout for subgroups */
+.drv-section.full-width .drv-bars-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    align-items: start;
+}
+
+/* Each subgroup stays together in one column (no splitting) */
+.drv-section.full-width .drv-subgroup {
+    break-inside: avoid;
+}
+
+.drv-bar-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.drv-bar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 13px;
+}
+
+.drv-bar-name {
+    font-weight: 500;
+    color: #374151;
+}
+
+.drv-bar-values {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.drv-bar-track {
+    position: relative;
+    height: 24px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: visible;
+}
+
+.drv-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+}
+
+.drv-bar-marker {
+    position: absolute;
+    top: -4px;
+    bottom: -4px;
+    width: 2px;
+    background: transparent;
+    border-left: 2px dashed #374151;
+    z-index: 2;
+}
+
+.drv-bar-marker::before {
+    content: '▼';
+    position: absolute;
+    top: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #374151;
+}
+
+.drv-bar-marker-label {
+    position: absolute;
+    top: -26px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 9px;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.drv-bar-percentage {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+/* Tooltip for bar graphs */
+#bargraphTooltip {
+    position: fixed;
+    background: var(--tooltip-bg);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: 2px 2px 0px #333;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    max-width: 220px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Exceeds DRV styling */
+.drv-bar-fill.exceeds-drv {
+    background: linear-gradient(90deg, var(--bar-color) 0%, var(--bar-color) 74%, #ef4444 100%) !important;
+}
+
+/* Color coding for % levels */
+.drv-bar-fill.low { opacity: 0.6; }
+.drv-bar-fill.good { opacity: 0.85; }
+.drv-bar-fill.high { opacity: 1; }
+
+@media (max-width: 768px) {
+    .drv-sections-wrapper {
+        grid-template-columns: 1fr;
+    }
+    
+    .drv-bars-container {
+        gap: 12px;
+    }
+    
+    .drv-section-header {
+        padding: 10px 12px;
+    }
+    
+    .drv-section-content {
+        padding: 12px;
+    }
+    
+    .drv-section-name {
+        font-size: 0.9rem;
+    }
+    
+    /* Single column for subgroups on mobile */
+    .drv-section.full-width .drv-bars-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .drv-profile-selector {
+        flex-direction: column;
+        gap: 10px !important;
+    }
+    
+    .drv-bar-header {
+        font-size: 12px;
+    }
+    
+    .drv-bar-track {
+        height: 20px;
+    }
+    
+    #bargraphTooltip {
+        font-size: 11px;
+        max-width: 180px;
+    }
+}
+
+/* DRV Sources */
+.drv-sources {
+    margin-top: 20px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 6px;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.drv-sources-title {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+}
+
+.drv-sources a {
+    color: #2563eb;
+    text-decoration: none;
+}
+
+.drv-sources a:hover {
+    text-decoration: underline;
+}
+
+/* DRV Subgroup (collapsible functional groups) */
+.drv-subgroup {
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.02);
+    margin-bottom: 8px;
+}
+
+.drv-subgroup-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.03);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+
+.drv-subgroup-header:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.drv-subgroup-icon {
+    font-size: 10px;
+    color: #6b7280;
+    transition: transform 0.2s;
+    width: 12px;
+}
+
+.drv-subgroup.collapsed .drv-subgroup-icon {
+    transform: rotate(-90deg);
+}
+
+.drv-subgroup-name {
+    font-size: 13px;
+    font-weight: 600;
+    flex: 1;
+}
+
+.drv-subgroup-count {
+    font-size: 11px;
+    color: #9ca3af;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.drv-subgroup-content {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+    max-height: 1000px;
+    opacity: 1;
+}
+
+.drv-subgroup.collapsed .drv-subgroup-content {
+    max-height: 0;
+    padding: 0 12px;
+    opacity: 0;
+    overflow: hidden;
+}
+
+/* ===== Radar Chart Styles ===== */
+.radar-chart-container {
+    width: 100%;
+    min-height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: transparent;
+    border-radius: 12px;
+    padding: 30px;
+}
+
+.radar-chart-container svg {
+    display: block;
+    margin: 0 auto;
+    overflow: visible;
+}
+
+.radar-chart .gridCircle {
+    fill: rgba(255, 255, 255, 0.3);
+    stroke: #666;
+    stroke-opacity: 0.4;
+}
+
+.radar-chart .axisLabel {
+    font-family: inherit;
+    fill: #333 !important;
+}
+
+.radar-chart .legend {
+    font-family: inherit;
+    fill: #333 !important;
+}
+
+.radar-chart .axis .line {
+    stroke: #888 !important;
+}
+
+.radar-chart .radarArea {
+    transition: fill-opacity 0.2s ease;
+}
+
+.radar-chart .radarStroke {
+    transition: stroke-width 0.2s ease;
+}
+
+.radar-chart .radarCircle {
+    transition: r 0.2s ease;
+}
+
+.radar-chart .radarCircle:hover {
+    r: 7;
+}
+
+/* Radar Options */
+.radar-options {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 12px 20px;
+    border-radius: 8px;
+}
+
+/* Custom Axes Selector */
+.radar-custom-axes {
+    background: rgba(255, 255, 255, 0.4);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.custom-axes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.axis-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.axis-group strong {
+    font-size: 0.9rem;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.axis-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: #444;
+    cursor: pointer;
+}
+
+.axis-group label:hover {
+    color: #000;
+}
+
+.axis-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Radar Tooltip */
+#radarTooltip {
+    position: fixed;
+    background: var(--tooltip-bg);
+    border: 1px solid var(--tooltip-border);
+    box-shadow: 2px 2px 0px #333;
+    padding: 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    max-width: 180px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 1000;
+}
+
+/* Radar Legend */
+.radar-legend {
+    padding: 10px 0;
+}
+
+.radar-legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+
+.radar-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #333;
+    padding: 4px 10px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 4px;
+}
+
+.radar-legend-item.low {
+    border-left: 3px solid #dc2626;
+}
+
+.radar-legend-item.good {
+    border-left: 3px solid #d97706;
+}
+
+.radar-legend-item.high {
+    border-left: 3px solid #16a34a;
+}
+
+.radar-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #4A90D9;
+}
+
+/* Radar Sources */
+.radar-sources {
+    margin-top: 20px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.4);
+    border-radius: 6px;
+    font-size: 12px;
+    color: #555;
+}
+
+.radar-sources-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.radar-sources a {
+    color: #1d4ed8;
+    text-decoration: none;
+}
+
+.radar-sources a:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .radar-chart-container {
+        min-height: 380px;
+        padding: 20px;
+    }
+    
+    .radar-options {
+        flex-direction: column;
+        gap: 10px !important;
+    }
+    
+    .custom-axes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .radar-legend-items {
+        gap: 8px;
+    }
+    
+    .radar-legend-item {
+        font-size: 11px;
+        padding: 3px 8px;
+    }
+    
+    #radarTooltip {
+        font-size: 11px;
+        max-width: 150px;
+    }
+}

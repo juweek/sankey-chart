@@ -106,6 +106,7 @@ async function handleFood(url, path, env) {
   const foodId = path.replace('/api/food/', '').replace('/raw', '');
   const reverseHierarchy = url.searchParams.get('reverseHierarchy') === 'true';
   const showSodium = url.searchParams.get('showSodium') === 'true';
+  const showFatBreakdown = url.searchParams.get('showFatBreakdown') !== 'false'; // Default true
 
   const foodUrl = `${USDA_BASE_URL}/food/${foodId}?api_key=${env.USDA_API_KEY}`;
   
@@ -129,7 +130,7 @@ async function handleFood(url, path, env) {
     });
   }
 
-  const sankeyData = transformToSankey(foodData, reverseHierarchy, showSodium);
+  const sankeyData = transformToSankey(foodData, reverseHierarchy, showSodium, showFatBreakdown);
 
   return new Response(JSON.stringify(sankeyData), {
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -153,7 +154,7 @@ async function handleFood(url, path, env) {
  *   Water → Total
  *   Minerals → Total
  */
-function transformToSankey(foodData, reverseHierarchy = false, showSodium = false) {
+function transformToSankey(foodData, reverseHierarchy = false, showSodium = false, showFatBreakdown = true) {
   const nutrients = foodData.foodNutrients || [];
 
   // Helper to get nutrient amount
@@ -215,25 +216,29 @@ function transformToSankey(foodData, reverseHierarchy = false, showSodium = fals
 
   // Log values for debugging
   console.log('Sankey Data:', {
-    reverseHierarchy, showSodium,
+    reverseHierarchy, showSodium, showFatBreakdown,
     water, protein, totalFat, carbs, minerals, sodium, otherMinerals,
     satFat, monoFat, polyFat, transFat, otherFats,
     sugars, fiber, starch
   });
 
-  // Node names - conditionally include Sodium if showSodium is true
-  // When showSodium is false, just show "Minerals" as a single node
-  const nodeNames = showSodium
-    ? [
-        "Total", "Water", "Protein", "Fat", "Carbs", "Sodium", "Minerals",
-        "Sat.", "Mono", "Poly", "Trans", "Other Fats",
-        "Sugars", "Fiber", "Starch"
-      ]
-    : [
-        "Total", "Water", "Protein", "Fat", "Carbs", "Minerals",
-        "Sat.", "Mono", "Poly", "Trans", "Other Fats",
-        "Sugars", "Fiber", "Starch"
-      ];
+  // Build node names based on options
+  let nodeNames = ["Total", "Water", "Protein", "Fat", "Carbs"];
+  
+  // Add sodium/minerals nodes
+  if (showSodium) {
+    nodeNames.push("Sodium", "Minerals");
+  } else {
+    nodeNames.push("Minerals");
+  }
+  
+  // Add fat subtypes only if showFatBreakdown is true
+  if (showFatBreakdown) {
+    nodeNames.push("Sat.", "Mono", "Poly", "Trans", "Other Fats");
+  }
+  
+  // Add carb subtypes
+  nodeNames.push("Sugars", "Fiber", "Starch");
 
   const nodes = nodeNames.map((name, i) => ({ node: i, name }));
   const nodeIndex = {};
@@ -242,25 +247,38 @@ function transformToSankey(foodData, reverseHierarchy = false, showSodium = fals
   const links = [];
 
   function addLink(source, target, value) {
-    if (value > 0) {
+    if (value > 0 && nodeIndex[source] !== undefined && nodeIndex[target] !== undefined) {
       links.push({ source: nodeIndex[source], target: nodeIndex[target], value });
     }
   }
 
   if (reverseHierarchy) {
     // Detail → Macro view:
-    // Fat → Sat/Mono/Poly/Trans/Other Fats → Total
+    // Fat → Sat/Mono/Poly/Trans/Other Fats → Total (if showFatBreakdown)
+    // Fat → Total (if !showFatBreakdown)
     // Carbs → Sugars/Fiber/Starch → Total
     // Protein → Total
     // Water → Total
     // Minerals (or Sodium + Minerals if showSodium) → Total
 
-    // Fat to subtypes
-    addLink("Fat", "Sat.", satFat);
-    addLink("Fat", "Mono", monoFat);
-    addLink("Fat", "Poly", polyFat);
-    addLink("Fat", "Trans", transFat);
-    addLink("Fat", "Other Fats", otherFats);
+    if (showFatBreakdown) {
+      // Fat to subtypes
+      addLink("Fat", "Sat.", satFat);
+      addLink("Fat", "Mono", monoFat);
+      addLink("Fat", "Poly", polyFat);
+      addLink("Fat", "Trans", transFat);
+      addLink("Fat", "Other Fats", otherFats);
+      
+      // Fat subtypes to Total
+      addLink("Sat.", "Total", satFat);
+      addLink("Mono", "Total", monoFat);
+      addLink("Poly", "Total", polyFat);
+      addLink("Trans", "Total", transFat);
+      addLink("Other Fats", "Total", otherFats);
+    } else {
+      // Fat directly to Total
+      addLink("Fat", "Total", totalFat);
+    }
     
     // Carbs to subtypes
     addLink("Carbs", "Sugars", sugars);
@@ -269,11 +287,6 @@ function transformToSankey(foodData, reverseHierarchy = false, showSodium = fals
 
     // All sub-nutrients to Total
     addLink("Protein", "Total", protein);
-    addLink("Sat.", "Total", satFat);
-    addLink("Mono", "Total", monoFat);
-    addLink("Poly", "Total", polyFat);
-    addLink("Trans", "Total", transFat);
-    addLink("Other Fats", "Total", otherFats);
     addLink("Sugars", "Total", sugars);
     addLink("Fiber", "Total", fiber);
     addLink("Starch", "Total", starch);
@@ -289,7 +302,8 @@ function transformToSankey(foodData, reverseHierarchy = false, showSodium = fals
 
   } else {
     // Normal Macro → Detail view:
-    // Total → Sat/Mono/Poly/Trans/Other Fats → Fat (terminal)
+    // Total → Sat/Mono/Poly/Trans/Other Fats → Fat (if showFatBreakdown)
+    // Total → Fat (if !showFatBreakdown)
     // Total → Carbs → Sugars/Fiber/Starch
     // Total → Protein/Water/Minerals (terminal)
 
@@ -305,17 +319,22 @@ function transformToSankey(foodData, reverseHierarchy = false, showSodium = fals
       addLink("Total", "Minerals", minerals);
     }
 
-    // Total to fat subtypes, then subtypes to Fat (terminal)
-    addLink("Total", "Sat.", satFat);
-    addLink("Total", "Mono", monoFat);
-    addLink("Total", "Poly", polyFat);
-    addLink("Total", "Trans", transFat);
-    addLink("Total", "Other Fats", otherFats);
-    addLink("Sat.", "Fat", satFat);
-    addLink("Mono", "Fat", monoFat);
-    addLink("Poly", "Fat", polyFat);
-    addLink("Trans", "Fat", transFat);
-    addLink("Other Fats", "Fat", otherFats);
+    if (showFatBreakdown) {
+      // Total to fat subtypes, then subtypes to Fat (terminal)
+      addLink("Total", "Sat.", satFat);
+      addLink("Total", "Mono", monoFat);
+      addLink("Total", "Poly", polyFat);
+      addLink("Total", "Trans", transFat);
+      addLink("Total", "Other Fats", otherFats);
+      addLink("Sat.", "Fat", satFat);
+      addLink("Mono", "Fat", monoFat);
+      addLink("Poly", "Fat", polyFat);
+      addLink("Trans", "Fat", transFat);
+      addLink("Other Fats", "Fat", otherFats);
+    } else {
+      // Total directly to Fat (terminal)
+      addLink("Total", "Fat", totalFat);
+    }
 
     // Total to Carbs, then Carbs to subtypes
     addLink("Total", "Carbs", carbs);

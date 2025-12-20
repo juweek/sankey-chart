@@ -81,9 +81,9 @@ def search_foods(query: str, page_size: int = 10, page: int = 1, *, request_id: 
         
     Returns:
         On success, a dictionary containing:
-          - results: List of food items
-          - totalPages: Total number of pages
-          - currentPage: Current page number
+        - results: List of food items
+        - totalPages: Total number of pages
+        - currentPage: Current page number
         On failure, a dictionary containing:
           - error: error message
           - status: upstream HTTP status code (if available)

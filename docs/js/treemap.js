@@ -1356,7 +1356,29 @@ async function fetchAndDisplayTreemaps(foodId) {
         document.getElementById('treemap_graphTitle').textContent = description;
         document.getElementById('treemap_graphSubhead').textContent = 'Nutrient composition per 100g';
         
+        // Update bar graph titles
+        const bargraphTitle = document.getElementById('bargraph_graphTitle');
+        const bargraphSubhead = document.getElementById('bargraph_graphSubhead');
+        if (bargraphTitle) bargraphTitle.textContent = description;
+        if (bargraphSubhead) bargraphSubhead.textContent = '% Daily Value per 100g serving';
+        
+        // Update radar chart titles
+        const radarTitle = document.getElementById('radar_graphTitle');
+        const radarSubhead = document.getElementById('radar_graphSubhead');
+        if (radarTitle) radarTitle.textContent = description;
+        if (radarSubhead) radarSubhead.textContent = 'Nutrient % DRV per 100g serving';
+        
         updateTreemaps();
+        
+        // Update bar graphs if the function is available
+        if (typeof window.updateDRVBarGraphs === 'function') {
+            window.updateDRVBarGraphs(currentTreemapData);
+        }
+        
+        // Update radar chart if the function is available
+        if (typeof window.updateRadarChartData === 'function') {
+            window.updateRadarChartData(currentTreemapData);
+        }
     } catch (error) {
         console.error('Treemap error:', error);
         document.getElementById('treemapContainer').innerHTML = 
