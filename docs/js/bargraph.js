@@ -938,17 +938,17 @@ function downloadDRVSection(containerId, sectionName) {
     const bars = container.querySelectorAll('.drv-bar-item');
     if (bars.length === 0) return;
     
-    // Create SVG
-    const barHeight = 50;
-    const barSpacing = 16;
-    const width = 500;
-    const height = bars.length * (barHeight + barSpacing) + 40;
-    const margin = { left: 20, right: 20, top: 30, bottom: 10 };
+    // Create SVG - doubled size for better quality
+    const barHeight = 100;
+    const barSpacing = 32;
+    const width = 1000;
+    const height = bars.length * (barHeight + barSpacing) + 100;
+    const margin = { left: 40, right: 40, top: 70, bottom: 20 };
     
     let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
     
-    // Background
-    svgContent += `<rect width="100%" height="100%" fill="#1a1a2e"/>`;
+    // Background - tan color
+    svgContent += `<rect width="100%" height="100%" fill="#FCF9F9"/>`;
     
     // Title
     const sectionTitles = {
@@ -958,10 +958,10 @@ function downloadDRVSection(containerId, sectionName) {
         minerals: 'Minerals - % Daily Value',
         vitamins: 'Vitamins - % Daily Value'
     };
-    svgContent += `<text x="${width/2}" y="20" fill="#fff" font-size="14" font-weight="bold" text-anchor="middle">${sectionTitles[sectionName] || sectionName}</text>`;
+    svgContent += `<text x="${width/2}" y="45" fill="#333" font-size="28" font-weight="bold" text-anchor="middle">${sectionTitles[sectionName] || sectionName}</text>`;
     
     // Draw each bar
-    let y = margin.top + 10;
+    let y = margin.top + 20;
     bars.forEach(bar => {
         const name = bar.dataset.nutrient;
         const value = parseFloat(bar.dataset.value);
@@ -977,26 +977,26 @@ function downloadDRVSection(containerId, sectionName) {
         const barFill = bar.querySelector('.drv-bar-fill');
         const color = barFill ? barFill.style.backgroundColor || '#666' : '#666';
         
-        // Background track
-        svgContent += `<rect x="${margin.left}" y="${y + 16}" width="${barWidth}" height="20" fill="#374151" rx="3"/>`;
+        // Background track - tan/gray color to match background
+        svgContent += `<rect x="${margin.left}" y="${y + 36}" width="${barWidth}" height="44" fill="#E8E4E1" rx="6"/>`;
         
         // Fill bar
-        svgContent += `<rect x="${margin.left}" y="${y + 16}" width="${fillWidth}" height="20" fill="${color}" rx="3"/>`;
+        svgContent += `<rect x="${margin.left}" y="${y + 36}" width="${fillWidth}" height="44" fill="${color}" rx="6"/>`;
         
         // 100% marker line
-        svgContent += `<line x1="${markerX}" y1="${y + 12}" x2="${markerX}" y2="${y + 40}" stroke="#fff" stroke-width="2" stroke-dasharray="4,2"/>`;
+        svgContent += `<line x1="${markerX}" y1="${y + 28}" x2="${markerX}" y2="${y + 86}" stroke="#666" stroke-width="3" stroke-dasharray="8,4"/>`;
         
         // DRV label
-        svgContent += `<text x="${markerX}" y="${y + 8}" fill="#fff" font-size="8" text-anchor="middle">DRV</text>`;
+        svgContent += `<text x="${markerX}" y="${y + 20}" fill="#666" font-size="16" font-weight="600" text-anchor="middle">DRV</text>`;
         
-        // Nutrient name
-        svgContent += `<text x="${margin.left}" y="${y + 12}" fill="#e5e7eb" font-size="11">${name}</text>`;
+        // Nutrient name - larger black text
+        svgContent += `<text x="${margin.left}" y="${y + 26}" fill="#222" font-size="26" font-weight="600">${name}</text>`;
         
-        // Values
-        svgContent += `<text x="${width - margin.right}" y="${y + 12}" fill="#9ca3af" font-size="10" text-anchor="end">${value.toFixed(1)}${unit} / ${drv}${unit}</text>`;
+        // Values - larger text
+        svgContent += `<text x="${width - margin.right}" y="${y + 26}" fill="#555" font-size="23" text-anchor="end">${value.toFixed(1)}${unit} / ${drv}${unit}</text>`;
         
-        // Percentage
-        svgContent += `<text x="${width - margin.right - 5}" y="${y + 30}" fill="#fff" font-size="11" font-weight="bold" text-anchor="end">${percentage.toFixed(0)}%</text>`;
+        // Percentage - inside bar or to the right
+        svgContent += `<text x="${width - margin.right - 10}" y="${y + 66}" fill="#333" font-size="22" font-weight="bold" text-anchor="end">${percentage.toFixed(0)}%</text>`;
         
         y += barHeight + barSpacing;
     });

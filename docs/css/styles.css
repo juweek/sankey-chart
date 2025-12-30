@@ -972,13 +972,13 @@ body {
 /* ===== Radar Chart Styles ===== */
 .radar-chart-container {
     width: 100%;
-    min-height: 500px;
+    min-height: 580px;
     display: flex;
     justify-content: center;
     align-items: center;
     background: transparent;
     border-radius: 12px;
-    padding: 30px;
+    padding: 40px;
 }
 
 .radar-chart-container svg {
