@@ -1,7 +1,17 @@
-// Radar Chart visualization for nutrient % DRV comparison
-// Uses D3.js and integrates with the same data as other visualizations
+/* ========================================================================
+ * RADAR CHART VISUALIZATION
+ * Multi-axis nutrient profile comparison showing % Daily Reference Values
+ * Dependencies: D3.js, config.js
+ * ======================================================================== */
 
-// DRV Profiles (reuse from bargraph.js structure)
+/* ========================================================================
+ * DAILY REFERENCE VALUES (DRV) CONFIGURATION
+ * Uses centralized DRV profiles from config.js
+ * Note: RADAR_DRV_PROFILES can be removed - using DRV_PROFILES from config.js
+ * ======================================================================== */
+
+// REMOVED: Local duplicate - now using centralized DRV_PROFILES from config.js
+/*
 const RADAR_DRV_PROFILES = {
     default: {
         protein: 50, fat: 78, carbs: 275, fiber: 28, sugars: 50, satFat: 20,
@@ -94,6 +104,12 @@ const RADAR_DRV_PROFILES = {
         vitaminB12: 2.4, biotin: 30, pantothenicAcid: 5, choline: 425
     }
 };
+*/
+
+/* ========================================================================
+ * RADAR CHART PRESETS AND CONFIGURATION
+ * Predefined axis combinations and display settings
+ * ======================================================================== */
 
 // Axis presets
 const RADAR_PRESETS = {
@@ -148,26 +164,32 @@ const RADAR_DISPLAY_NAMES = {
     choline: 'Choline'
 };
 
-// Colors for the radar chart
+// Colors for the radar chart (local copy for D3 compatibility)
+// NOTE: These match RADAR_CHART_COLORS from config.js
 const RADAR_COLORS = {
     primary: '#4A90D9',
     secondary: '#E94E77',
     tertiary: '#50C878'
 };
 
+/* ========================================================================
+ * STATE MANAGEMENT
+ * Current radar data and selected axes
+ * ======================================================================== */
+
 // Current radar data
 let currentRadarData = null;
 let currentRadarAxes = ['protein', 'fat', 'carbs'];
 
-// Get DRV profile based on selection
+/* ========================================================================
+ * DRV PROFILE HELPER
+ * Uses centralized getDRVProfile from config.js
+ * ======================================================================== */
+
+// Get DRV profile based on selection (uses centralized function from config.js)
 function getRadarDRVProfile(age, sex) {
-    if (age === 'child') return RADAR_DRV_PROFILES.child;
-    if (age === 'child4-8') return RADAR_DRV_PROFILES['child4-8'];
-    if (age === 'child9-13') return RADAR_DRV_PROFILES['child9-13'];
-    if (age === 'teen14-18') return RADAR_DRV_PROFILES[`teen14-18_${sex}`] || RADAR_DRV_PROFILES.default;
-    if (age === 'adult') return RADAR_DRV_PROFILES[`adult_${sex}`] || RADAR_DRV_PROFILES.default;
-    if (age === 'senior') return RADAR_DRV_PROFILES[`senior_${sex}`] || RADAR_DRV_PROFILES.default;
-    return RADAR_DRV_PROFILES.default;
+    // Use the centralized getDRVProfile helper from config.js
+    return getDRVProfile(age, sex, 'none');
 }
 
 // Text wrap function for D3

@@ -150,6 +150,12 @@ function getLinkColor(sourceName, targetName) {
     return linkColorBase[key1] || linkColorBase[key2] || "#666363";
 }
 
+function getCurrentNodeLabelFontSizePx() {
+    if (chartHeightCurrent === chartHeightLarge) return 24;
+    if (chartHeightCurrent === chartHeightMedium) return 20;
+    return 16; // Small mode
+}
+
 // Set up dimensions and margins - adjust for mobile
 const isMobile = window.innerWidth <= 768;
 const margin = { 
@@ -172,6 +178,8 @@ let currentFoodId = null;
 let showValueLabels = false;
 let reverseFlow = false;
 let reverseHierarchy = false;
+const TALL_EXPORT_WIDTH_PX = 978;  // 850 * 1.15
+const TALL_EXPORT_HEIGHT_PX = 1150; // 1000 * 1.15
 
 // Initialize the Sankey diagram
 const sankey = d3.sankey()
@@ -387,6 +395,8 @@ async function updateSankey(foodId) {
             })
             .attr("y", d => (d.y1 - d.y0) / 2)
             .attr("dy", "0.35em")
+            .style("font-size", `${getCurrentNodeLabelFontSizePx()}px`)
+            .style("font-weight", "700")
             .attr("text-anchor", d => {
                 const isSource = d.targetLinks.length === 0 && d.sourceLinks.length > 0;
                 const isSink = d.sourceLinks.length === 0 && d.targetLinks.length > 0;
@@ -494,6 +504,9 @@ function downloadSankeySVG(options) {
     const clone = svg.cloneNode(true);
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    normalizeExportNodeLabels(clone);
+    fitExportToContent(svg, clone);
+    applyExportDimensions(clone, options);
     // Ensure no element uses pure black fills in the exported SVG
     sanitizeBlackFills(clone);
     // Add export-specific CSS to remove fills and keep strokes/text visible
@@ -519,6 +532,47 @@ function downloadSankeySVG(options) {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+}
+
+function applyExportDimensions(exportSvg, options = {}) {
+    if (!options.tall) return;
+    exportSvg.setAttribute("width", `${TALL_EXPORT_WIDTH_PX}`);
+    exportSvg.setAttribute("height", `${TALL_EXPORT_HEIGHT_PX}`);
+}
+
+function normalizeExportNodeLabels(rootSvg) {
+    const labelNodes = rootSvg.querySelectorAll('.node text');
+    labelNodes.forEach((textEl) => {
+        if (!(textEl instanceof SVGTextElement)) return;
+        const raw = (textEl.textContent || "").replace(/\s+/g, " ").trim();
+        if (!raw) return;
+        // Flatten tspans into plain text for better compatibility with SVG viewers.
+        textEl.textContent = raw;
+    });
+}
+
+function fitExportToContent(sourceSvg, exportSvg) {
+    const chartGroup = sourceSvg.querySelector('g');
+    if (!chartGroup || typeof chartGroup.getBBox !== 'function') return;
+    let bbox;
+    try {
+        bbox = chartGroup.getBBox();
+    } catch (error) {
+        return;
+    }
+    const finite = [bbox.x, bbox.y, bbox.width, bbox.height].every(Number.isFinite);
+    if (!finite || bbox.width <= 0 || bbox.height <= 0) return;
+
+    const padding = 20;
+    const minX = Math.floor(bbox.x - padding);
+    const minY = Math.floor(bbox.y - padding);
+    const viewWidth = Math.ceil(bbox.width + (padding * 2));
+    const viewHeight = Math.ceil(bbox.height + (padding * 2));
+
+    exportSvg.setAttribute("viewBox", `${minX} ${minY} ${viewWidth} ${viewHeight}`);
+    exportSvg.setAttribute("width", `${viewWidth}`);
+    exportSvg.setAttribute("height", `${viewHeight}`);
+    exportSvg.setAttribute("overflow", "visible");
 }
 
 const downloadBtn = document.getElementById('downloadSvgBtn');

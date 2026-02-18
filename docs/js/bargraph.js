@@ -1,8 +1,18 @@
-// Bar Graph visualization for % Daily Value
-// Uses same API and data as treemap.js
+/* ========================================================================
+ * BAR GRAPH VISUALIZATION (% DAILY VALUE)
+ * Displays nutrients as percentage of Daily Reference Values (DRV)
+ * Dependencies: D3.js, config.js
+ * ======================================================================== */
 
-// Daily Recommended Values (DRV) based on FDA/NIH guidelines
-// Values are per day, organized by age/sex/condition
+/* ========================================================================
+ * DAILY REFERENCE VALUES (DRV) CONFIGURATION
+ * Uses centralized DRV profiles from config.js
+ * Note: DRV_PROFILES is imported from config.js - do not redeclare
+ * ======================================================================== */
+
+// REMOVED: Local DRV_PROFILES declaration (now using centralized version from config.js)
+// The following code block has been replaced with centralized configuration
+/*
 const DRV_PROFILES = {
     // Default adult values (FDA Reference Daily Intakes)
     default: {
@@ -419,8 +429,19 @@ const DRV_PROFILES = {
         choline: 425
     }
 };
+*/
 
-// Color mapping (same as treemap)
+/* ========================================================================
+ * COLOR CONFIGURATION
+ * Uses centralized color schemes from config.js
+ * BAR_COLORS references the centralized BAR_GRAPH_COLORS
+ * ======================================================================== */
+
+// Reference to centralized bar graph colors
+const BAR_COLORS = BAR_GRAPH_COLORS;
+
+// Legacy duplicate removed - was:
+/*
 const BAR_COLORS = {
     // Macros
     "Water": "#658394",
@@ -468,6 +489,12 @@ const BAR_COLORS = {
     "Pantothenic Acid": "#FFA726",
     "Choline": "#FFC107"
 };
+*/
+
+/* ========================================================================
+ * STATE MANAGEMENT
+ * Tracks current data and display preferences
+ * ======================================================================== */
 
 // Current DRV data
 let currentDRVData = null;

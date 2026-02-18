@@ -13,6 +13,7 @@ API_KEY = os.environ.get("USDA_API_KEY", "DEMO_KEY")
 TIMEOUT_SECONDS = 10
 MAX_RETRIES = 3
 RETRY_STATUSES = {429, 500, 502, 503}
+VALID_DATA_TYPES = {"Branded", "SR Legacy", "Survey (FNDDS)", "Foundation", "Experimental"}
 
 def _mask_api_key(params: Dict) -> Dict:
     safe = dict(params or {})
@@ -90,9 +91,18 @@ def search_foods(query: str, page_size: int = 10, page: int = 1, *, request_id: 
     """
     try:
         url = f"{BASE_URL}/foods/search"
-        # Default data types if none specified
+        # Default data types if none specified.
+        # Keep order stable so result mix remains predictable.
         if not data_types:
             data_types = ["Survey (FNDDS)", "SR Legacy", "Branded", "Foundation"]
+        else:
+            # Normalize and drop unsupported values to avoid upstream 400s.
+            normalized = [dt.strip() for dt in data_types if isinstance(dt, str) and dt.strip()]
+            filtered = [dt for dt in normalized if dt in VALID_DATA_TYPES]
+            if not filtered:
+                logger.warning(f"[{request_id}] No valid dataTypes in {data_types}; falling back to defaults")
+                filtered = ["Survey (FNDDS)", "SR Legacy", "Branded", "Foundation"]
+            data_types = filtered
         params = {
             "api_key": API_KEY,
             "query": query,
@@ -102,6 +112,25 @@ def search_foods(query: str, page_size: int = 10, page: int = 1, *, request_id: 
         }
         
         response = _request_with_retries("GET", url, params=params, allow_404_retry=True, request_id=request_id)
+        # USDA occasionally changes accepted dataType combinations. If a filtered
+        # request is rejected, retry once without dataType so search still works.
+        if response.status_code == 400 and data_types:
+            logger.warning(
+                f"[{request_id}] USDA rejected dataType filter {data_types}; retrying unfiltered search"
+            )
+            fallback_params = {
+                "api_key": API_KEY,
+                "query": query,
+                "pageSize": page_size,
+                "pageNumber": page,
+            }
+            response = _request_with_retries(
+                "GET",
+                url,
+                params=fallback_params,
+                allow_404_retry=True,
+                request_id=request_id,
+            )
         response.raise_for_status()
         
         data = response.json()

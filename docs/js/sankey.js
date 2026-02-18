@@ -1,8 +1,13 @@
-// API Configuration - Change this to your Cloudflare Worker URL after deployment
-const API_BASE_URL = "https://sankey-usda-proxy.gourmetdata.workers.dev";
-// For local development with Flask, use: const API_BASE_URL = "";
+/* ========================================================================
+ * SANKEY DIAGRAM VISUALIZATION
+ * Displays nutrient flow from total composition to macro and micro nutrients
+ * Dependencies: D3.js, d3-sankey, config.js
+ * ======================================================================== */
 
-// Side Panel Toggle
+/* ========================================================================
+ * SIDE PANEL CONTROLS
+ * Handles opening/closing of the side panel for search and settings
+ * ======================================================================== */
 const sidePanel = document.getElementById('sidePanel');
 const openPanelBtn = document.getElementById('openPanelBtn');
 const closePanelBtn = document.getElementById('closePanelBtn');
@@ -31,8 +36,10 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Define color schemes
-// Search functionality
+/* ========================================================================
+ * SEARCH FUNCTIONALITY
+ * Handles food search with pagination and data type filtering
+ * ======================================================================== */
 document.getElementById('searchButton').addEventListener('click', performSearch);
 document.getElementById('searchInput').addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
@@ -170,92 +177,36 @@ function performSearch(queryParam, page = 1) {
         });
 }
 
-const nodeColor = {
-    "Total": "#4A5568",  // Darker slate gray for the aggregate node
-    "Water": "#658394",
-    "Protein": "#54886A",
-    "Fat": "#B22222",
-    "Sat.": "#B22222",
-    "Mono": "#B22222",
-    "Poly": "#B22222",
-    "Trans": "#8B0000",
-    "Other Fats": "#B22222",
-    "Carbs": "#CC9A2E",
-    "Sugars": "#CC9A2E",
-    "Fiber": "#CC9A2E",
-    "Starch": "#CC9A2E",
-    "Sodium": "#8B5FCF",      // Darker purple for sodium
-    "Minerals": "#9370DB",    // Purple for minerals
-};
+/* ========================================================================
+ * COLOR CONFIGURATION
+ * Uses centralized color schemes from config.js
+ * Node colors, text colors, and link colors for the Sankey diagram
+ * ======================================================================== */
 
-// Text colors for node labels
-const nodeTextColor = {
-    "Total": "#4A5568",
-    "Water": "#4781A3",
-    "Protein": "#419162",
-    "Fat": "#B12424",
-    "Sat.": "#B12424",
-    "Mono": "#B12424",
-    "Poly": "#B12424",
-    "Trans": "#B12424",
-    "Other Fats": "#B12424",
-    "Carbs": "#9C7522",
-    "Sugars": "#9C7522",
-    "Fiber": "#9C7522",
-    "Starch": "#9C7522",
-    "Sodium": "#5D39A7",
-    "Minerals": "#5D39A7",
-};
+// Reference to centralized node colors
+const nodeColor = SANKEY_NODE_COLORS;
 
-// Get text color for a node
+// Helper function to get node text color (uses centralized config)
 function getNodeTextColor(nodeName) {
-    return nodeTextColor[nodeName] || "#333";
+    return SANKEY_NODE_TEXT_COLORS[nodeName] || "#333";
 }
 
-// Base link colors - we'll look up both directions
-const linkColorBase = {
-    "Total-Water": "#658394",
-    "Total-Protein": "#67B080",
-    "Total-Carbs": "#CC9A2E",
-    "Total-Sodium": "#8B5FCF",
-    "Total-Minerals": "#9370DB",
-    "Total-Fat": "#B22222",  // Direct link when fat breakdown is disabled
-    // Fat subtypes to Fat (normal mode: Total → Sat/Mono/Poly → Fat)
-    "Sat.-Fat": "#B22222",
-    "Mono-Fat": "#B22222",
-    "Poly-Fat": "#B22222",
-    "Trans-Fat": "#8B0000",
-    "Other Fats-Fat": "#B22222",
-    // Total to fat subtypes (normal mode)
-    "Total-Sat.": "#B22222",
-    "Total-Mono": "#B22222",
-    "Total-Poly": "#B22222",
-    "Total-Trans": "#8B0000",
-    "Total-Other Fats": "#B22222",
-    // Carbs breakdown
-    "Carbs-Starch": "#CC9A2E", 
-    "Carbs-Sugars": "#CC9A2E", 
-    "Carbs-Fiber": "#CC9A2E",
-    // Reverse hierarchy: subtypes to Total
-    "Total-Sugars": "#CC9A2E",
-    "Total-Fiber": "#CC9A2E",
-    "Total-Starch": "#CC9A2E",
-    // Detail → Macro: Fat to subtypes
-    "Fat-Sat.": "#B22222",
-    "Fat-Mono": "#B22222",
-    "Fat-Poly": "#B22222",
-    "Fat-Trans": "#8B0000",
-    "Fat-Other Fats": "#B22222",
-};
-
-// Get link color - checks both directions (A-B and B-A)
+// Helper function to get link color (uses centralized config)
 function getLinkColor(sourceName, targetName) {
-    const key1 = `${sourceName}-${targetName}`;
-    const key2 = `${targetName}-${sourceName}`;
-    return linkColorBase[key1] || linkColorBase[key2] || "#666363";
+    return getSankeyLinkColor(sourceName, targetName);
 }
 
-// Set up dimensions and margins - adjust for mobile
+function getCurrentNodeLabelFontSizePx() {
+    if (chartHeightCurrent === chartHeightTall) return 24;
+    if (chartHeightCurrent === chartHeightLarge) return 20;
+    if (chartHeightCurrent === chartHeightMedium) return 17;
+    return 14; // Small mode
+}
+
+/* ========================================================================
+ * CHART DIMENSIONS AND LAYOUT
+ * Responsive dimensions, margins, and height configurations
+ * ======================================================================== */
 const isMobile = window.innerWidth <= 768;
 const margin = { 
     top: isMobile ? 20 : 30, 
@@ -282,6 +233,8 @@ let reverseHierarchy = false;
 let showSodium = false;  // Whether to show sodium as separate node
 let showFatBreakdown = true;  // Whether to show fat breakdown (Sat, Mono, Poly, Trans)
 let nodeSortMode = 'auto';  // 'auto', 'value', or 'custom'
+const TALL_EXPORT_WIDTH_PX = 978;  // 850 * 1.15
+const TALL_EXPORT_HEIGHT_PX = 1150; // 1000 * 1.15
 
 // Custom order for end nodes when custom mode is selected
 const customEndNodeOrder = {
@@ -314,7 +267,10 @@ const sankey = d3.sankey()
     .iterations(64)  // More iterations = better node positioning (default is 6)
     .extent([[0, 2], [width - 1, (height - 5) * verticalScale]]);
 
-// Create SVG container
+/* ========================================================================
+ * D3 SANKEY INITIALIZATION
+ * Creates the SVG container and initializes the Sankey generator
+ * ======================================================================== */
 const svg = d3.select("#sankeyDiagram_my_dataviz")
     .append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -322,12 +278,12 @@ const svg = d3.select("#sankeyDiagram_my_dataviz")
     .append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-/*
-  ===============
-    // Function to highlight the opacity of the nodes and its connected links
-  ===============
-  */
-  function highlightNode(event, d) {
+/* ========================================================================
+ * NODE HIGHLIGHTING INTERACTION
+ * Highlights nodes and their connected paths on hover
+ * Recursively highlights both upstream (parents) and downstream (children) nodes
+ * ======================================================================== */
+function highlightNode(event, d) {
     const allLinks = svg.selectAll(".link");
     const allNodes = svg.selectAll(".node rect");
     const allTexts = svg.selectAll(".node text");
@@ -391,7 +347,11 @@ const svg = d3.select("#sankeyDiagram_my_dataviz")
     }
 }
 
-// Function to update the Sankey diagram
+/* ========================================================================
+ * UPDATE SANKEY DIAGRAM
+ * Main function to fetch food data and render the Sankey visualization
+ * Handles data fetching, layout computation, and SVG rendering
+ * ======================================================================== */
 async function updateSankey(foodId) {
     try {
         // Show loading overlay
@@ -660,6 +620,8 @@ async function updateSankey(foodId) {
             })
             .attr("y", d => (d.y1 - d.y0) / 2)
             .attr("dy", "0.35em")
+            .style("font-size", `${getCurrentNodeLabelFontSizePx()}px`)
+            .style("font-weight", "700")
             .attr("text-anchor", d => {
                 const isSource = d.targetLinks.length === 0 && d.sourceLinks.length > 0;
                 const isSink = d.sourceLinks.length === 0 && d.targetLinks.length > 0;
@@ -781,6 +743,9 @@ function downloadSankeySVG(options) {
     const clone = svg.cloneNode(true);
     clone.setAttribute("xmlns", "http://www.w3.org/2000/svg");
     clone.setAttribute("xmlns:xlink", "http://www.w3.org/1999/xlink");
+    normalizeExportNodeLabels(clone);
+    fitExportToContent(svg, clone);
+    applyExportDimensions(clone, options);
     // Ensure no element uses pure black fills in the exported SVG
     sanitizeBlackFills(clone);
     // Add export-specific CSS to remove fills and keep strokes/text visible
@@ -810,9 +775,54 @@ function downloadSankeySVG(options) {
     URL.revokeObjectURL(url);
 }
 
+function applyExportDimensions(exportSvg, options = {}) {
+    if (!options.tall) return;
+    exportSvg.setAttribute("width", `${TALL_EXPORT_WIDTH_PX}`);
+    exportSvg.setAttribute("height", `${TALL_EXPORT_HEIGHT_PX}`);
+}
+
+function normalizeExportNodeLabels(rootSvg) {
+    const labelNodes = rootSvg.querySelectorAll('.node text');
+    labelNodes.forEach((textEl) => {
+        if (!(textEl instanceof SVGTextElement)) return;
+        const raw = (textEl.textContent || "").replace(/\s+/g, " ").trim();
+        if (!raw) return;
+        // Flatten tspans into plain text for better compatibility with SVG viewers.
+        textEl.textContent = raw;
+    });
+}
+
+function fitExportToContent(sourceSvg, exportSvg) {
+    const chartGroup = sourceSvg.querySelector('g');
+    if (!chartGroup || typeof chartGroup.getBBox !== 'function') return;
+    let bbox;
+    try {
+        bbox = chartGroup.getBBox();
+    } catch (error) {
+        return;
+    }
+    const finite = [bbox.x, bbox.y, bbox.width, bbox.height].every(Number.isFinite);
+    if (!finite || bbox.width <= 0 || bbox.height <= 0) return;
+
+    const padding = 20;
+    const minX = Math.floor(bbox.x - padding);
+    const minY = Math.floor(bbox.y - padding);
+    const viewWidth = Math.ceil(bbox.width + (padding * 2));
+    const viewHeight = Math.ceil(bbox.height + (padding * 2));
+
+    exportSvg.setAttribute("viewBox", `${minX} ${minY} ${viewWidth} ${viewHeight}`);
+    exportSvg.setAttribute("width", `${viewWidth}`);
+    exportSvg.setAttribute("height", `${viewHeight}`);
+    exportSvg.setAttribute("overflow", "visible");
+}
+
 const downloadBtn = document.getElementById('downloadSvgBtn');
 if (downloadBtn) {
-    downloadBtn.addEventListener('click', () => downloadSankeySVG({ tall: false }));
+    downloadBtn.addEventListener('click', () => {
+        const modeTallEl = document.getElementById('modeTall');
+        const tallModeSelected = !!(modeTallEl && modeTallEl.checked);
+        downloadSankeySVG({ tall: tallModeSelected });
+    });
 }
 
 // Format node label based on toggle

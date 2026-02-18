@@ -631,6 +631,187 @@ body {
     .treemap-value {
         font-size: 8px;
     }
+
+    .stackedbar-container {
+        min-height: 200px;
+        padding: 10px 8px;
+    }
+
+    .stackedbar-secondary {
+        min-height: 220px;
+    }
+
+    .circlepack-container {
+        min-height: 200px;
+        padding: 8px;
+    }
+
+    .circlepack-secondary {
+        min-height: 215px;
+    }
+
+    .voronoi-container {
+        min-height: 200px;
+        padding: 8px;
+    }
+
+    .voronoi-secondary {
+        min-height: 215px;
+    }
+}
+
+/* Stacked Bar Chart Styles */
+.stacked-bar-chart {
+    display: block;
+    width: 100%;
+}
+
+.stacked-bar-chart .segment rect {
+    transition: opacity 0.2s ease;
+}
+
+.stacked-bar-chart .segment rect:hover {
+    opacity: 0.8;
+}
+
+.treemap-container:has(.stacked-bar-chart) {
+    min-height: auto;
+    padding: 15px 10px;
+}
+
+.stackedbar-container {
+    min-height: 220px;
+    position: relative;
+    background: #f8f4ea;
+    border: 1px solid #e6dcc8;
+    border-radius: 8px;
+    overflow: hidden;
+    padding: 14px 10px;
+}
+
+.stackedbar-secondary {
+    min-height: 240px;
+}
+
+.stacked-bar-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    margin: 10px 6px 2px;
+}
+
+.stacked-bar-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #3f3a32;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid #e6dcc8;
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.stacked-bar-legend-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+.stacked-bar-legend-label {
+    line-height: 1;
+}
+
+/* Circle Packing */
+.circlepack-container {
+    min-height: 220px;
+    position: relative;
+    background: #f7f8f3;
+    border: 1px solid #d9dfcf;
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 10px;
+}
+
+.circlepack-secondary {
+    min-height: 240px;
+}
+
+.circlepack-svg {
+    display: block;
+    width: 100%;
+}
+
+.circlepack-label {
+    fill: #2f2f2f;
+    font-weight: 600;
+    pointer-events: none;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.65);
+}
+
+/* Circular Voronoi */
+.voronoi-container {
+    min-height: 220px;
+    position: relative;
+    background: #f5f7ef;
+    border: 1px solid #d3d9c6;
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 10px;
+}
+
+.voronoi-secondary {
+    min-height: 240px;
+}
+
+.voronoi-svg {
+    display: block;
+    width: 100%;
+}
+
+.voronoi-label {
+    fill: #2f2f2f;
+    font-weight: 600;
+    pointer-events: none;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+
+.nutrient-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    margin: 10px 4px 4px;
+}
+
+.nutrient-key-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #3f3a32;
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid #dfe5d2;
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+
+.nutrient-key-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.nutrient-key-label {
+    line-height: 1;
+}
+
+.nutrient-key-value {
+    color: #6a6a6a;
+    font-weight: 600;
 }
 
 /* ===== DRV Bar Graphs ===== */

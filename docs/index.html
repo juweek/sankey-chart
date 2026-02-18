@@ -116,6 +116,13 @@
                             <span class="visually-hidden">Loading...</span>
                         </div>
                     </div>
+                    <!-- Portion Size Selector -->
+                    <div id="portionSizeContainer" class="d-flex justify-content-center gap-2 mb-3 align-items-center" style="display: none !important;">
+                        <label for="portionSize" class="form-label mb-0 fw-semibold">Portion Size:</label>
+                        <select class="form-select form-select-sm" id="portionSize" style="width: auto; min-width: 200px;">
+                            <option value="100">100g (default)</option>
+                        </select>
+                    </div>
                 </div>
                 <!-- Chart Type Tabs -->
                 <ul class="nav nav-tabs mb-3" id="chartTabs" role="tablist">
@@ -124,6 +131,15 @@
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="treemap-tab" data-bs-toggle="tab" data-bs-target="#treemapPanel" type="button" role="tab">Treemaps</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="circlepack-tab" data-bs-toggle="tab" data-bs-target="#circlepackPanel" type="button" role="tab">Circle Packing</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="voronoi-tab" data-bs-toggle="tab" data-bs-target="#voronoiPanel" type="button" role="tab">Circular Voronoi</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stackedbar-tab" data-bs-toggle="tab" data-bs-target="#stackedbarPanel" type="button" role="tab">Stacked Bars</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="bargraph-tab" data-bs-toggle="tab" data-bs-target="#bargraphPanel" type="button" role="tab">% Daily Value</button>
@@ -238,6 +254,227 @@
                             </div>
 
                             <div id="treemap_graphSource" class="text-center mt-3">
+                                Source: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer">USDA FoodData Database</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Circle Packing Tab -->
+                    <div class="tab-pane fade" id="circlepackPanel" role="tabpanel">
+                        <div class="choropleth_graphic_area">
+                            <h4 id="circlepack_graphTitle" class="text-center mb-3">Nutrient Circle Packing</h4>
+                            <p id="circlepack_graphSubhead" class="text-center mb-4">Nested circles by nutrient category and subtype</p>
+
+                            <div class="d-flex justify-content-center gap-3 mb-3 flex-wrap align-items-center">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="circlePackShowSubtypes" checked>
+                                    <label class="form-check-label" for="circlePackShowSubtypes">Show subtypes</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="circlePackShowLabels" checked>
+                                    <label class="form-check-label" for="circlePackShowLabels">Show gram amounts</label>
+                                </div>
+                                <div class="btn-group btn-group-sm flex-wrap">
+                                    <button id="downloadCirclePackSvg" class="btn btn-outline-secondary" disabled>Macro</button>
+                                    <button id="downloadFatCirclePackSvg" class="btn btn-outline-secondary" disabled>Fat</button>
+                                    <button id="downloadCarbsCirclePackSvg" class="btn btn-outline-secondary" disabled>Carbs</button>
+                                    <button id="downloadProteinCirclePackSvg" class="btn btn-outline-secondary" disabled>Protein</button>
+                                    <button id="downloadMicronutrientsCirclePackSvg" class="btn btn-outline-secondary" disabled>Micro</button>
+                                    <button id="downloadMineralsCirclePackSvg" class="btn btn-outline-secondary" disabled>Minerals</button>
+                                    <button id="downloadVitaminsCirclePackSvg" class="btn btn-outline-secondary" disabled>Vitamins</button>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">All Macronutrients (per 100g)</h5>
+                                    <div id="circlePackMacroContainer" class="circlepack-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-lg-4 col-md-6 col-12 mb-3">
+                                    <h5 class="text-center">Fat Breakdown</h5>
+                                    <div id="circlePackFatContainer" class="circlepack-container circlepack-secondary"></div>
+                                </div>
+                                <div class="col-lg-4 col-md-6 col-12 mb-3">
+                                    <h5 class="text-center">Carbs Breakdown</h5>
+                                    <div id="circlePackCarbsContainer" class="circlepack-container circlepack-secondary"></div>
+                                </div>
+                                <div class="col-lg-4 col-12 mb-3">
+                                    <h5 class="text-center">Protein (Amino Acids)</h5>
+                                    <div id="circlePackProteinContainer" class="circlepack-container circlepack-secondary"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">All Micronutrients (Minerals + Vitamins)</h5>
+                                    <div id="circlePackMicronutrientsContainer" class="circlepack-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">Minerals Breakdown (mg)</h5>
+                                    <div id="circlePackMineralsContainer" class="circlepack-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">Vitamins Breakdown (mg)</h5>
+                                    <div id="circlePackVitaminsContainer" class="circlepack-container"></div>
+                                </div>
+                            </div>
+
+                            <div id="circlepack_graphSource" class="text-center mt-3">
+                                Source: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer">USDA FoodData Database</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Circular Voronoi Tab -->
+                    <div class="tab-pane fade" id="voronoiPanel" role="tabpanel">
+                        <div class="choropleth_graphic_area">
+                            <h4 id="voronoi_graphTitle" class="text-center mb-3">Nutrient Circular Voronoi</h4>
+                            <p id="voronoi_graphSubhead" class="text-center mb-4">Circular Voronoi cells for nutrient groups and subtypes</p>
+
+                            <div class="d-flex justify-content-center gap-3 mb-3 flex-wrap align-items-center">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="voronoiShowSubtypes" checked>
+                                    <label class="form-check-label" for="voronoiShowSubtypes">Show subtypes</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="voronoiShowLabels" checked>
+                                    <label class="form-check-label" for="voronoiShowLabels">Show gram amounts</label>
+                                </div>
+                                <div class="btn-group btn-group-sm flex-wrap">
+                                    <button id="downloadVoronoiSvg" class="btn btn-outline-secondary" disabled>Macro</button>
+                                    <button id="downloadFatVoronoiSvg" class="btn btn-outline-secondary" disabled>Fat</button>
+                                    <button id="downloadCarbsVoronoiSvg" class="btn btn-outline-secondary" disabled>Carbs</button>
+                                    <button id="downloadProteinVoronoiSvg" class="btn btn-outline-secondary" disabled>Protein</button>
+                                    <button id="downloadMicronutrientsVoronoiSvg" class="btn btn-outline-secondary" disabled>Micro</button>
+                                    <button id="downloadMineralsVoronoiSvg" class="btn btn-outline-secondary" disabled>Minerals</button>
+                                    <button id="downloadVitaminsVoronoiSvg" class="btn btn-outline-secondary" disabled>Vitamins</button>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">All Macronutrients (per 100g)</h5>
+                                    <div id="voronoiMacroContainer" class="voronoi-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-lg-4 col-md-6 col-12 mb-3">
+                                    <h5 class="text-center">Fat Breakdown</h5>
+                                    <div id="voronoiFatContainer" class="voronoi-container voronoi-secondary"></div>
+                                </div>
+                                <div class="col-lg-4 col-md-6 col-12 mb-3">
+                                    <h5 class="text-center">Carbs Breakdown</h5>
+                                    <div id="voronoiCarbsContainer" class="voronoi-container voronoi-secondary"></div>
+                                </div>
+                                <div class="col-lg-4 col-12 mb-3">
+                                    <h5 class="text-center">Protein (Amino Acids)</h5>
+                                    <div id="voronoiProteinContainer" class="voronoi-container voronoi-secondary"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">All Micronutrients (Minerals + Vitamins)</h5>
+                                    <div id="voronoiMicronutrientsContainer" class="voronoi-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">Minerals Breakdown (mg)</h5>
+                                    <div id="voronoiMineralsContainer" class="voronoi-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">Vitamins Breakdown (mg)</h5>
+                                    <div id="voronoiVitaminsContainer" class="voronoi-container"></div>
+                                </div>
+                            </div>
+
+                            <div id="voronoi_graphSource" class="text-center mt-3">
+                                Source: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer">USDA FoodData Database</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stacked Bars Tab -->
+                    <div class="tab-pane fade" id="stackedbarPanel" role="tabpanel">
+                        <div class="choropleth_graphic_area">
+                            <h4 id="stackedbar_graphTitle" class="text-center mb-3">Nutrient Stacked Bars</h4>
+                            <p id="stackedbar_graphSubhead" class="text-center mb-4">Stacked nutrient composition with color keys</p>
+
+                            <div class="d-flex justify-content-center gap-3 mb-3 flex-wrap align-items-center">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="stackedBarShowSubtypes" checked>
+                                    <label class="form-check-label" for="stackedBarShowSubtypes">Show subtypes</label>
+                                </div>
+                                <div class="btn-group btn-group-sm flex-wrap">
+                                    <button id="downloadStackedBarSvg" class="btn btn-outline-secondary" disabled>Macro</button>
+                                    <button id="downloadFatStackedBarSvg" class="btn btn-outline-secondary" disabled>Fat</button>
+                                    <button id="downloadCarbsStackedBarSvg" class="btn btn-outline-secondary" disabled>Carbs</button>
+                                    <button id="downloadProteinStackedBarSvg" class="btn btn-outline-secondary" disabled>Protein</button>
+                                    <button id="downloadMicronutrientsStackedBarSvg" class="btn btn-outline-secondary" disabled>Micro</button>
+                                    <button id="downloadMineralsStackedBarSvg" class="btn btn-outline-secondary" disabled>Minerals</button>
+                                    <button id="downloadVitaminsStackedBarSvg" class="btn btn-outline-secondary" disabled>Vitamins</button>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">All Macronutrients (per 100g)</h5>
+                                    <div id="stackedBarMacroContainer" class="stackedbar-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-lg-4 col-md-6 col-12 mb-3">
+                                    <h5 class="text-center">Fat Breakdown</h5>
+                                    <div id="stackedBarFatContainer" class="stackedbar-container stackedbar-secondary"></div>
+                                </div>
+                                <div class="col-lg-4 col-md-6 col-12 mb-3">
+                                    <h5 class="text-center">Carbs Breakdown</h5>
+                                    <div id="stackedBarCarbsContainer" class="stackedbar-container stackedbar-secondary"></div>
+                                </div>
+                                <div class="col-lg-4 col-12 mb-3">
+                                    <h5 class="text-center">Protein (Amino Acids)</h5>
+                                    <div id="stackedBarProteinContainer" class="stackedbar-container stackedbar-secondary"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">All Micronutrients (Minerals + Vitamins)</h5>
+                                    <div id="stackedBarMicronutrientsContainer" class="stackedbar-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">Minerals Breakdown (mg)</h5>
+                                    <div id="stackedBarMineralsContainer" class="stackedbar-container"></div>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h5 class="text-center">Vitamins Breakdown (mg)</h5>
+                                    <div id="stackedBarVitaminsContainer" class="stackedbar-container"></div>
+                                </div>
+                            </div>
+
+                            <div id="stackedbar_graphSource" class="text-center mt-3">
                                 Source: <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer">USDA FoodData Database</a>
                             </div>
                         </div>
@@ -509,6 +746,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3-sankey/0.12.3/d3-sankey.min.js"></script>
+    <!-- Centralized configuration must load first -->
+    <script src="js/config.js"></script>
+    <!-- Visualization modules -->
     <script src="js/sankey.js"></script>
     <script src="js/treemap.js"></script>
     <script src="js/bargraph.js"></script>
